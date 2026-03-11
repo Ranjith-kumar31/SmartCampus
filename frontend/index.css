@@ -1,0 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#080b14] text-slate-200 antialiased font-sans min-h-screen;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-surface/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl transition-all duration-300;
+  }
+
+  .glass-panel {
+    @apply bg-surface/60 backdrop-blur-2xl border border-white/5 shadow-2xl;
+  }
+
+  .dashboard-card {
+    @apply bg-[#0f1328]/80 border border-white/[0.06] rounded-xl transition-all duration-200;
+  }
+
+  .btn-primary {
+    @apply bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 px-4 rounded-xl transition-all duration-300 active:scale-95 shadow-lg shadow-indigo-600/20;
+  }
+
+  .btn-secondary {
+    @apply bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/[0.08] font-medium py-2 px-4 rounded-xl transition-all duration-300 active:scale-95;
+  }
+
+  .input-field {
+    @apply w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/30 transition-all;
+  }
+
+  .form-label {
+    @apply block text-xs font-medium text-slate-400 mb-1.5;
+  }
+
+  .nav-link {
+    @apply text-slate-300 hover:text-white font-medium transition-colors relative after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-indigo-600 hover:after:w-full after:transition-all after:duration-300;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #080b14;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Scan animation for QR scanner */
+@keyframes scan {
+  0%, 100% { top: 0; }
+  50% { top: calc(100% - 4px); }
+}
