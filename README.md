@@ -84,7 +84,7 @@ node seedHODs.js
 1. From the root directory:
    ```bash
    npm install
-   npm run dev
+   npm run vishnu
    ```
 2. Open your browser at [http://localhost:5173](http://localhost:5173).
 
