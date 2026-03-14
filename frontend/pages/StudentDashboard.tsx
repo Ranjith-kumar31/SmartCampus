@@ -7,6 +7,11 @@ import toast from 'react-hot-toast';
 import DashboardLayout from '../components/layouts/DashboardLayout';
 
 const api = axios.create({ baseURL: 'http://localhost:5000/api' });
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) config.headers['Authorization'] = `Bearer ${token}`;
+  return config;
+});
 
 const navItems = [
   { icon: Home, label: 'Home', id: 'events' },
@@ -21,6 +26,7 @@ const StudentDashboard = () => {
   const [activeTab, setActiveTab] = useState('events');
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [registeredEvents, setRegisteredEvents] = useState<any[]>([]);
   const [odRequests, setOdRequests] = useState<any[]>([]);
   const [odLoading, setOdLoading] = useState(false);
   const [showOdModal, setShowOdModal] = useState(false);
@@ -28,6 +34,12 @@ const StudentDashboard = () => {
   const [selectedEventForOd, setSelectedEventForOd] = useState('');
   const [aiSuggestions, setAiSuggestions] = useState<any>(null);
   const [aiLoading, setAiLoading] = useState(false);
+
+  // Registration form modal state
+  const [showRegModal, setShowRegModal] = useState(false);
+  const [regEventTarget, setRegEventTarget] = useState<any>(null);
+  const [regForm, setRegForm] = useState({ phone: '', year: '', branch: '' });
+  const [regLoading, setRegLoading] = useState(false);
 
   const userString = localStorage.getItem('user');
   const user = userString ? JSON.parse(userString) : { name: 'Student', department: 'Unknown', id: '', rollNumber: '' };
@@ -40,6 +52,15 @@ const StudentDashboard = () => {
     finally { setLoading(false); }
   };
 
+  // Fetch real registered events for this student
+  const fetchRegisteredEvents = async () => {
+    if (!user.id) return;
+    try {
+      const res = await api.get(`/events/student/${user.id}/registered`);
+      setRegisteredEvents(res.data || []);
+    } catch { console.error('Failed to fetch registered events'); }
+  };
+
   const fetchOdRequests = async () => {
     if (!user.id) return;
     setOdLoading(true);
@@ -50,7 +71,7 @@ const StudentDashboard = () => {
     finally { setOdLoading(false); }
   };
 
-  useEffect(() => { fetchEvents(); fetchOdRequests(); }, []);
+  useEffect(() => { fetchEvents(); fetchRegisteredEvents(); fetchOdRequests(); }, []);
 
   const fetchAiSuggestions = async () => {
     if (!user.id || aiSuggestions) return; // Only fetch once
@@ -66,19 +87,58 @@ const StudentDashboard = () => {
     if (activeTab === 'ai') fetchAiSuggestions();
   }, [activeTab]);
 
-  const handleRegister = async (eventId: string, regFee: number = 0) => {
-    // Free event — direct registration
-    if (!regFee || regFee === 0) {
-      try {
-        await api.post(`/events/${eventId}/register`, { studentId: user.id });
-        toast.success('Successfully registered! 🎉');
-        fetchEvents();
-        setAiSuggestions(null); // reset AI so it refreshes
-      } catch (err: any) { toast.error(err.response?.data?.message || 'Failed to register'); }
+  // Open registration form modal (always collect details)
+  const openRegModal = (event: any) => {
+    setRegEventTarget(event);
+    setRegForm({
+      phone: '',
+      year: '',
+      branch: user.department || '',
+    });
+    setShowRegModal(true);
+  };
+
+  // Submit registration with details
+  const submitRegistration = async () => {
+    if (!regEventTarget) return;
+    if (!regForm.phone.trim() || !regForm.year.trim()) {
+      toast.error('Please fill in your phone number and year of study');
       return;
     }
+    setRegLoading(true);
+    const eventId = regEventTarget.id || regEventTarget._id;
+    const regFee = regEventTarget.regFee || regEventTarget.reg_fee || 0;
 
-    // Paid event — Razorpay checkout
+    try {
+      if (!regFee || regFee === 0) {
+        // Free event — direct registration with details
+        const res = await api.post(`/events/${eventId}/register`, {
+          studentId: user.id,
+          phone: regForm.phone,
+          year: regForm.year,
+          branch: regForm.branch,
+        });
+        toast.success(res.data.message || 'Registered successfully! 🎉');
+        setShowRegModal(false);
+        fetchEvents();
+        fetchRegisteredEvents();
+        setAiSuggestions(null);
+      } else {
+        setShowRegModal(false);
+        // Paid event — keep existing Razorpay flow
+        await handleRegister(eventId, regFee);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to register');
+    } finally {
+      setRegLoading(false);
+    }
+  };
+
+
+  // Paid event — Razorpay checkout (called from submitRegistration for paid events)
+  const handleRegister = async (eventId: string, regFee: number = 0) => {
+    if (!regFee || regFee === 0) return;
     try {
       const orderRes = await api.post('/payments/create-order', { eventId, studentId: user.id });
       const { orderId, amount, currency, keyId, eventTitle } = orderRes.data;
@@ -101,22 +161,17 @@ const StudentDashboard = () => {
             });
             toast.success('Payment successful! Registration confirmed 🎉');
             fetchEvents();
+            fetchRegisteredEvents();
             setAiSuggestions(null);
           } catch {
             toast.error('Payment verification failed. Contact support.');
           }
         },
-        prefill: {
-          name: user.name,
-          email: user.email || '',
-        },
+        prefill: { name: user.name, email: user.email || '' },
         theme: { color: '#6366f1' },
-        modal: {
-          ondismiss: () => toast('Payment cancelled.', { icon: '⚠️' }),
-        },
+        modal: { ondismiss: () => toast('Payment cancelled.', { icon: '⚠️' }) },
       };
 
-      // Load Razorpay checkout script dynamically
       if (!(window as any).Razorpay) {
         const script = document.createElement('script');
         script.src = 'https://checkout.razorpay.com/v1/checkout.js';
@@ -141,7 +196,9 @@ const StudentDashboard = () => {
     } catch (err: any) { toast.error(err.response?.data?.message || 'Failed to submit OD request'); }
   };
 
-  const registeredEvents = events.filter(e => e.registeredStudents?.includes(user?.id));
+
+  // Set of registered event IDs for O(1) lookup
+  const registeredEventIds = new Set(registeredEvents.map(e => e.id || e._id));
 
   const categoryColors: Record<string, string> = {
     'AI & ML': 'bg-indigo-600',
@@ -335,7 +392,7 @@ const StudentDashboard = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                   {events.map(event => {
-                    const isRegistered = event.registeredStudents?.includes(user.id);
+                    const isRegistered = registeredEventIds.has(event.id || event._id);
                     const badgeColor = categoryColors[event.domain] || 'bg-slate-600';
                     return (
                       <div key={event._id} className="dashboard-card overflow-hidden group hover:border-indigo-500/20 transition-all duration-300">
@@ -363,7 +420,7 @@ const StudentDashboard = () => {
                               <CheckCircle className="w-4 h-4" /> Registered
                             </button>
                           ) : (
-                            <button onClick={() => handleRegister(event._id)} className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition-colors shadow-lg shadow-indigo-600/20">
+                            <button onClick={() => openRegModal(event)} className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition-colors shadow-lg shadow-indigo-600/20">
                               Register Now
                             </button>
                           )}
@@ -446,7 +503,7 @@ const StudentDashboard = () => {
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 {registeredEvents.map(event => (
-                  <TicketCardCompact key={event._id} event={event} userId={user.id} />
+                  <TicketCardCompact key={event.registrationId || event._id} event={event} userId={user.id} />
                 ))}
               </div>
             )}
@@ -684,6 +741,73 @@ const StudentDashboard = () => {
                   className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
                   <Send className="w-4 h-4" /> Submit Request
                 </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ===== REGISTRATION FORM MODAL ===== */}
+      <AnimatePresence>
+        {showRegModal && regEventTarget && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+            onClick={() => setShowRegModal(false)}>
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              className="dashboard-card w-full max-w-md p-6 relative" onClick={e => e.stopPropagation()}>
+              <button onClick={() => setShowRegModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X className="w-5 h-5" /></button>
+
+              <div className="mb-5">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 mb-1 block">Event Registration</span>
+                <h3 className="text-lg font-bold text-white">{regEventTarget.title}</h3>
+                <p className="text-slate-500 text-xs mt-1">{regEventTarget.date} · {regEventTarget.location}</p>
+              </div>
+
+              {/* Pre-filled student info */}
+              <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 mb-5 space-y-2">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">Your Details (auto-filled)</p>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div><p className="text-slate-500 text-[10px] uppercase">Name</p><p className="text-white font-medium">{user.name}</p></div>
+                  <div><p className="text-slate-500 text-[10px] uppercase">Roll No</p><p className="text-white font-medium">{user.rollNumber || 'N/A'}</p></div>
+                  <div><p className="text-slate-500 text-[10px] uppercase">Department</p><p className="text-white font-medium">{user.department}</p></div>
+                  <div><p className="text-slate-500 text-[10px] uppercase">Email</p><p className="text-white font-medium truncate">{user.email}</p></div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Additional Details Required</p>
+
+                <div>
+                  <label className="form-label">Phone Number <span className="text-red-400">*</span></label>
+                  <input type="tel" className="input-field" placeholder="e.g. 9876543210"
+                    value={regForm.phone} onChange={e => setRegForm(p => ({ ...p, phone: e.target.value }))} />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="form-label">Year of Study <span className="text-red-400">*</span></label>
+                    <select className="input-field" value={regForm.year} onChange={e => setRegForm(p => ({ ...p, year: e.target.value }))}>
+                      <option value="" className="bg-[#0c1021]">Select Year</option>
+                      {['1st Year', '2nd Year', '3rd Year', '4th Year'].map(y => (
+                        <option key={y} value={y} className="bg-[#0c1021]">{y}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Branch / Section</label>
+                    <input className="input-field" placeholder="e.g. CSE-A"
+                      value={regForm.branch} onChange={e => setRegForm(p => ({ ...p, branch: e.target.value }))} />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button onClick={() => setShowRegModal(false)} className="flex-1 py-2.5 text-slate-400 hover:text-white text-sm font-medium transition-colors border border-white/[0.06] rounded-xl">Cancel</button>
+                  <button onClick={submitRegistration} disabled={regLoading}
+                    className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2">
+                    {regLoading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : null}
+                    Confirm Registration
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>

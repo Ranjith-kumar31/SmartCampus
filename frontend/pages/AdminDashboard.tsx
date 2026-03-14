@@ -1,11 +1,22 @@
 import { useState, useEffect } from 'react';
-import { Users, CalendarPlus, Server, UserCog, FileText, Settings, CheckSquare, XSquare, Eye, TrendingUp, Star, ExternalLink } from 'lucide-react';
+import { Users, CalendarPlus, Server, UserCog, FileText, Settings, Eye, TrendingUp, Star, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/layouts/DashboardLayout';
 
 const api = axios.create({ baseURL: 'http://localhost:5000/api' });
+
+// Attach the admin JWT token to every request
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  return config;
+});
+
 
 const navItems = [
   { icon: Users, label: 'Club Approvals', id: 'clubs' },
@@ -17,12 +28,51 @@ const navItems = [
 ];
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('clubs');
   const [clubs, setClubs] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
   const [loadingClubs, setLoadingClubs] = useState(true);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [approvalFilter, setApprovalFilter] = useState<'clubs' | 'events'>('clubs');
+
+  // Redirect to login if token is missing or rejected by the server
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    if (!token || !user) {
+      navigate('/auth/admin', { replace: true });
+      return;
+    }
+    try {
+      const parsed = JSON.parse(user);
+      if (parsed?.role !== 'admin') {
+        navigate('/auth/admin', { replace: true });
+      }
+    } catch {
+      navigate('/auth/admin', { replace: true });
+    }
+  }, []);
+
+  // Handle 401 / 403 from any API call — session expired or not admin
+  useEffect(() => {
+    const interceptor = api.interceptors.response.use(
+      (res) => res,
+      (error) => {
+        if (error.response?.status === 401) {
+          toast.error('Session expired. Please log in again.');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          navigate('/auth/admin', { replace: true });
+        } else if (error.response?.status === 403) {
+          toast.error('Access denied. Admin privileges required.');
+          navigate('/', { replace: true });
+        }
+        return Promise.reject(error);
+      }
+    );
+    return () => api.interceptors.response.eject(interceptor);
+  }, [navigate]);
 
   const fetchClubs = async () => {
     setLoadingClubs(true);
@@ -40,9 +90,14 @@ const AdminDashboard = () => {
 
   useEffect(() => { fetchClubs(); fetchPendingEvents(); }, []);
 
-  const handleClubAction = async (id: string, status: string) => {
-    try { await api.patch(`/clubs/${id}/status`, { status }); toast.success(`Club ${status}!`); fetchClubs(); }
-    catch (err: any) { toast.error(err.response?.data?.message || 'Action failed'); }
+  const handleClubAction = async (id: string, status: 'Approved' | 'Rejected', name?: string) => {
+    try {
+      await api.patch(`/clubs/${id}/status`, { status });
+      toast.success(`Club "${name || ''}" ${status}! ✅`);
+      fetchClubs();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Action failed');
+    }
   };
 
   const handleEventAction = async (id: string, status: string) => {
@@ -53,8 +108,11 @@ const AdminDashboard = () => {
   const pendingClubs = clubs.filter(c => c.status === 'Pending');
   const activeClubs = clubs.filter(c => c.status === 'Approved');
 
-  const userString = localStorage.getItem('user');
-  const user = userString ? JSON.parse(userString) : { name: 'Admin', role: 'admin', id: '' };
+  const getUserFromStorage = () => {
+    try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; }
+  };
+  const user = getUserFromStorage();
+
 
   return (
     <DashboardLayout
@@ -118,8 +176,10 @@ const AdminDashboard = () => {
                         ) : pendingClubs.length === 0 ? (
                           <tr><td colSpan={4} className="px-5 py-8 text-center text-slate-500">No pending club registrations.</td></tr>
                         ) : (
-                          pendingClubs.map((club: any) => (
-                            <tr key={club._id} className="hover:bg-white/[0.02] transition-colors">
+                          pendingClubs.map((club: any) => {
+                            const clubId = club.id || club._id;
+                            return (
+                            <tr key={clubId} className="hover:bg-white/[0.02] transition-colors">
                               <td className="px-5 py-3.5">
                                 <div className="flex items-center gap-3">
                                   <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 font-bold text-xs">&lt;&gt;</div>
@@ -129,7 +189,11 @@ const AdminDashboard = () => {
                                   </div>
                                 </div>
                               </td>
-                              <td className="px-5 py-3.5 text-slate-400 text-sm">{new Date(club.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                              <td className="px-5 py-3.5 text-slate-400 text-sm">
+                                {club.created_at
+                                  ? new Date(club.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                                  : 'N/A'}
+                              </td>
                               <td className="px-5 py-3.5">
                                 <span className="bg-white/[0.06] text-slate-300 px-2.5 py-1 rounded-md text-xs font-medium">{club.department}</span>
                               </td>
@@ -149,12 +213,19 @@ const AdminDashboard = () => {
                               </td>
                               <td className="px-5 py-3.5">
                                 <div className="flex gap-2">
-                                  <button onClick={() => handleClubAction(club._id, 'Approved')} className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold rounded-lg transition-colors">✓ Approve</button>
-                                  <button onClick={() => handleClubAction(club._id, 'Rejected')} className="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs font-medium rounded-lg transition-colors border border-red-500/20">✗ Reject</button>
+                                  <button
+                                    onClick={() => handleClubAction(clubId, 'Approved', club.name)}
+                                    className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold rounded-lg transition-colors"
+                                  >✓ Approve</button>
+                                  <button
+                                    onClick={() => handleClubAction(clubId, 'Rejected', club.name)}
+                                    className="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs font-medium rounded-lg transition-colors border border-red-500/20"
+                                  >✗ Reject</button>
                                 </div>
                               </td>
                             </tr>
-                          ))
+                            );
+                          })
                         )}
                       </tbody>
                     </table>
@@ -181,8 +252,10 @@ const AdminDashboard = () => {
                         ) : events.length === 0 ? (
                           <tr><td colSpan={4} className="px-5 py-8 text-center text-slate-500">No pending event proposals.</td></tr>
                         ) : (
-                          events.map((evt: any) => (
-                            <tr key={evt._id} className="hover:bg-white/[0.02] transition-colors">
+                          events.map((evt: any) => {
+                            const evtId = evt.id || evt._id;
+                            return (
+                            <tr key={evtId} className="hover:bg-white/[0.02] transition-colors">
                               <td className="px-5 py-3.5">
                                 <p className="text-white font-medium">{evt.title}</p>
                                 <p className="text-slate-500 text-xs">{evt.club?.name || 'Unknown'}</p>
@@ -190,15 +263,16 @@ const AdminDashboard = () => {
                               <td className="px-5 py-3.5">
                                 <span className="bg-white/[0.06] text-slate-300 px-2.5 py-1 rounded-md text-xs font-medium">{evt.domain}</span>
                               </td>
-                              <td className="px-5 py-3.5 text-slate-400 text-sm">{evt.expectedAudience}</td>
+                              <td className="px-5 py-3.5 text-slate-400 text-sm">{evt.expected_audience ?? evt.expectedAudience ?? 'N/A'}</td>
                               <td className="px-5 py-3.5">
                                 <div className="flex gap-2">
-                                  <button onClick={() => handleEventAction(evt._id, 'Approved')} className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold rounded-lg transition-colors">Approve</button>
-                                  <button onClick={() => handleEventAction(evt._id, 'Rejected')} className="px-3 py-1.5 bg-white/[0.06] hover:bg-white/[0.1] text-slate-300 text-xs font-medium rounded-lg transition-colors">Reject</button>
+                                  <button onClick={() => handleEventAction(evtId, 'Approved')} className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold rounded-lg transition-colors">Approve</button>
+                                  <button onClick={() => handleEventAction(evtId, 'Rejected')} className="px-3 py-1.5 bg-white/[0.06] hover:bg-white/[0.1] text-slate-300 text-xs font-medium rounded-lg transition-colors">Reject</button>
                                 </div>
                               </td>
                             </tr>
-                          ))
+                            );
+                          })
                         )}
                       </tbody>
                     </table>
@@ -272,21 +346,24 @@ const AdminDashboard = () => {
                   ) : events.length === 0 ? (
                     <tr><td colSpan={5} className="px-5 py-8 text-center text-slate-500">No pending event proposals.</td></tr>
                   ) : (
-                    events.map((evt: any) => (
-                      <tr key={evt._id} className="hover:bg-white/[0.02] transition-colors">
+                    events.map((evt: any) => {
+                      const evtId = evt.id || evt._id;
+                      return (
+                      <tr key={evtId} className="hover:bg-white/[0.02] transition-colors">
                         <td className="px-5 py-3.5 text-white font-medium">{evt.title}</td>
                         <td className="px-5 py-3.5 text-slate-400">{evt.club?.name || 'Unknown'}</td>
                         <td className="px-5 py-3.5"><span className="bg-white/[0.06] text-slate-300 px-2.5 py-1 rounded-md text-xs">{evt.domain}</span></td>
-                        <td className="px-5 py-3.5 text-slate-400">{evt.expectedAudience}</td>
+                        <td className="px-5 py-3.5 text-slate-400">{evt.expected_audience ?? evt.expectedAudience ?? 'N/A'}</td>
                         <td className="px-5 py-3.5">
                           <div className="flex gap-2">
                             <button className="px-3 py-1.5 bg-white/[0.06] text-slate-300 text-xs rounded-lg flex items-center gap-1"><Eye className="w-3 h-3" /> Review</button>
-                            <button onClick={() => handleEventAction(evt._id, 'Approved')} className="px-3 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg">Approve</button>
-                            <button onClick={() => handleEventAction(evt._id, 'Rejected')} className="px-3 py-1.5 bg-white/[0.06] text-slate-300 text-xs rounded-lg">Reject</button>
+                            <button onClick={() => handleEventAction(evtId, 'Approved')} className="px-3 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg">Approve</button>
+                            <button onClick={() => handleEventAction(evtId, 'Rejected')} className="px-3 py-1.5 bg-white/[0.06] text-slate-300 text-xs rounded-lg">Reject</button>
                           </div>
                         </td>
                       </tr>
-                    ))
+                      );
+                    })
                   )}
                 </tbody>
               </table>

@@ -1,36 +1,37 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const dotenv = require('dotenv');
+import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
+import { createClient } from '@supabase/supabase-js';
 
 dotenv.config({ path: '../server/.env' });
 
-const adminSchema = new mongoose.Schema({
-  name: String,
-  email: String,
-  password: String,
-  role: { type: String, default: 'admin' },
-}, { timestamps: true });
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const Admin = mongoose.model('Admin', adminSchema);
+if (!supabaseUrl || !supabaseKey) {
+  console.error('Error: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set in .env');
+  process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function seedAdmin() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log('✅ Connected to MongoDB');
+    console.log('✅ Connected to Supabase');
 
     // Remove existing admin to avoid duplicates
-    await Admin.deleteOne({ email: 'admin@smartcampus.edu' });
+    await supabase.from('admins').delete().eq('email', 'admin@smartcampus.edu');
 
     const plainPassword = 'Admin@Vishnu2026';
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(plainPassword, salt);
 
-    await Admin.create({
+    const { error } = await supabase.from('admins').insert([{
       name: 'Vishnu Selvam',
       email: 'admin@smartcampus.edu',
-      password: hashedPassword,
-      role: 'admin',
-    });
+      password: hashedPassword
+    }]);
+
+    if (error) throw error;
 
     console.log('\n┌──────────────────────────────────────────────┐');
     console.log('│           ADMIN ACCOUNT CREATED ✅            │');

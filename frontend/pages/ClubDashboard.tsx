@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, CalendarPlus, Users, QrCode, BarChart2, Settings, PlusCircle, Trash2, Clock, MapPin, CalendarDays, IndianRupee, X, TrendingUp, Pencil, ChevronDown, ChevronLeft, UserCheck } from 'lucide-react';
+import { LayoutDashboard, CalendarPlus, Users, QrCode, BarChart2, Settings, PlusCircle, Trash2, Clock, MapPin, CalendarDays, IndianRupee, X, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import axios from 'axios';
@@ -8,10 +8,12 @@ import DashboardLayout from '../components/layouts/DashboardLayout';
 
 const api = axios.create({ baseURL: 'http://localhost:5000/api' });
 
-const ANALYTICS_DATA = [
-  { name: 'Mon', regs: 10 }, { name: 'Tue', regs: 25 }, { name: 'Wed', regs: 40 },
-  { name: 'Thu', regs: 55 }, { name: 'Fri', regs: 80 }, { name: 'Sat', regs: 120 }, { name: 'Sun', regs: 150 }
-];
+// Attach token
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) config.headers['Authorization'] = `Bearer ${token}`;
+  return config;
+});
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', id: 'overview' },
@@ -22,35 +24,86 @@ const navItems = [
   { icon: Settings, label: 'Settings', id: 'settings' },
 ];
 
+/* ─── helpers ─── */
+const getUser = () => { try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; } };
+
 const ClubDashboard = () => {
+  const user = getUser();
+
   const [activeView, setActiveView] = useState('overview');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [events, setEvents] = useState<any[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
 
-  const userString = localStorage.getItem('user');
-  const user = userString ? JSON.parse(userString) : { name: 'Club', department: 'Unknown', id: '' };
+  // Participants state
+  const [selectedEventId, setSelectedEventId] = useState<string>('');
+  const [participants, setParticipants] = useState<any[]>([]);
+  const [loadingParticipants, setLoadingParticipants] = useState(false);
+  const [participantSearch, setParticipantSearch] = useState('');
+  const [deptFilter, setDeptFilter] = useState('All');
+
+  // QR Scanner state
+  const [scannerEventId, setScannerEventId] = useState<string>('');
+  const [scannedLog, setScannedLog] = useState<any[]>([]);
+  const [manualTicket, setManualTicket] = useState('');
+  const [showManualInput, setShowManualInput] = useState(false);
+  const [autoCheckin, setAutoCheckin] = useState(true);
 
   const [formData, setFormData] = useState({
     title: '', domain: '', date: '', time: '', location: '',
     expectedAudience: '', regFee: '0', description: '', rules: [''], prizes: [''],
   });
 
+  /* ── Fetch this club's events from dedicated endpoint ── */
   const fetchClubEvents = async () => {
+    if (!user.id) return;
     setLoadingEvents(true);
     try {
-      const res = await api.get('/events');
-      const pendingRes = await api.get('/events/pending');
-      const allEvents = [...res.data, ...pendingRes.data];
-      const unique = allEvents.filter((e, i, s) => i === s.findIndex(x => x._id === e._id));
-      const clubEvents = unique.filter((e: any) => e.club === user.id || e.club?._id === user.id);
-      setEvents(clubEvents);
-    } catch { console.error('Failed to fetch events'); }
-    finally { setLoadingEvents(false); }
+      const res = await api.get(`/events/club/${user.id}`);
+      setEvents(res.data);
+    } catch {
+      console.error('Failed to fetch club events');
+    } finally {
+      setLoadingEvents(false);
+    }
   };
 
   useEffect(() => { fetchClubEvents(); }, []);
 
+  /* ── Auto-select first event for participants tab ── */
+  useEffect(() => {
+    if (events.length > 0 && !selectedEventId) {
+      setSelectedEventId(events[0].id || events[0]._id);
+    }
+    if (events.length > 0 && !scannerEventId) {
+      setScannerEventId(events[0].id || events[0]._id);
+    }
+  }, [events]);
+
+  /* ── Fetch participants when event is selected ── */
+  const fetchParticipants = async (eventId: string) => {
+    if (!eventId) return;
+    setLoadingParticipants(true);
+    try {
+      const res = await api.get(`/events/${eventId}/participants`);
+      setParticipants(res.data.participants || []);
+    } catch {
+      toast.error('Failed to load participants');
+    } finally {
+      setLoadingParticipants(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeView === 'participants' && selectedEventId) {
+      fetchParticipants(selectedEventId);
+    }
+    if (activeView === 'scanner' && scannerEventId) {
+      fetchParticipants(scannerEventId); // load participants for QR scanner too
+    }
+  }, [activeView, selectedEventId, scannerEventId]);
+
+  /* ── Form helpers ── */
   const handleFormChange = (field: string, value: any) => setFormData(prev => ({ ...prev, [field]: value }));
   const handleArrayField = (field: 'rules' | 'prizes', index: number, value: string) => {
     const updated = [...formData[field]]; updated[index] = value;
@@ -64,7 +117,14 @@ const ClubDashboard = () => {
       toast.error('Please fill in all required fields'); return;
     }
     try {
-      await api.post('/events', { ...formData, club: user.id, expectedAudience: parseInt(formData.expectedAudience, 10) || 0, regFee: parseInt(formData.regFee, 10) || 0, rules: formData.rules.filter(r => r.trim()), prizes: formData.prizes.filter(p => p.trim()) });
+      await api.post('/events', {
+        ...formData,
+        clubId: user.id,
+        expectedAudience: parseInt(formData.expectedAudience, 10) || 0,
+        regFee: parseInt(formData.regFee, 10) || 0,
+        rules: formData.rules.filter(r => r.trim()),
+        prizes: formData.prizes.filter(p => p.trim()),
+      });
       toast.success('Event proposed! Pending admin approval.');
       setShowCreateModal(false);
       setFormData({ title: '', domain: '', date: '', time: '', location: '', expectedAudience: '', regFee: '0', description: '', rules: [''], prizes: [''] });
@@ -73,12 +133,78 @@ const ClubDashboard = () => {
   };
 
   const handleDeleteEvent = async (id: string) => {
+    if (!window.confirm('Delete this event? This cannot be undone.')) return;
     try { await api.delete(`/events/${id}`); toast.success('Event deleted'); fetchClubEvents(); }
     catch (err: any) { toast.error(err.response?.data?.message || 'Failed to delete event'); }
   };
 
-  const totalRegistrations = events.reduce((a, e) => a + (e.registeredStudents?.length || 0), 0);
-  const totalRevenue = events.reduce((a, e) => a + ((e.registeredStudents?.length || 0) * (e.regFee || 0)), 0);
+  /* ── QR scan simulation: match ticket string "EVT-<evtId>-STU-<stuId>" ── */
+  const handleManualScan = () => {
+    if (!manualTicket.trim()) { toast.error('Enter a ticket ID'); return; }
+    const parts = manualTicket.trim().split('-STU-');
+    if (parts.length !== 2 || !parts[0].startsWith('EVT-')) {
+      toast.error('Invalid ticket format. Expected: EVT-<eventId>-STU-<studentId>');
+      return;
+    }
+    const ticketEventId = parts[0].replace('EVT-', '');
+    const studentId = parts[1];
+
+    // validate event matches selected scanner event
+    const currentEventId = scannerEventId;
+    if (ticketEventId !== currentEventId) {
+      toast.error('This ticket belongs to a different event!');
+      return;
+    }
+
+    const participant = participants.find(p => p.studentId === studentId);
+    if (!participant) {
+      toast.error('Student not registered for this event');
+      return;
+    }
+
+    const alreadyScanned = scannedLog.find(s => s.studentId === studentId && s.eventId === currentEventId);
+    if (alreadyScanned) {
+      toast('Already checked in!', { icon: '⚠️' });
+      return;
+    }
+
+    const logEntry = {
+      studentId,
+      eventId: currentEventId,
+      name: participant.name,
+      rollNumber: participant.rollNumber,
+      department: participant.department,
+      scannedAt: new Date(),
+    };
+    setScannedLog(prev => [logEntry, ...prev]);
+    toast.success(`✅ ${participant.name} checked in!`);
+    setManualTicket('');
+    setShowManualInput(false);
+  };
+
+  /* ── Derived data ── */
+  const totalRegistrations = events.reduce((a, e) => a + (e.registration_count || 0), 0);
+  const totalRevenue = events.reduce((a, e) => a + ((e.registration_count || 0) * (e.regFee || e.reg_fee || 0)), 0);
+
+  const approvedEvents = events.filter(e => e.status === 'Approved');
+
+  // Chart data: registrations per event (real)
+  const chartData = approvedEvents.slice(0, 7).map(e => ({
+    name: e.title?.slice(0, 12) + (e.title?.length > 12 ? '…' : ''),
+    regs: e.registration_count || 0,
+  }));
+
+  // Filtered participants
+  const departments = ['All', ...Array.from(new Set(participants.map(p => p.department))).filter(Boolean)];
+  const filteredParticipants = participants.filter(p => {
+    const matchSearch = participantSearch === '' ||
+      p.name.toLowerCase().includes(participantSearch.toLowerCase()) ||
+      p.rollNumber.toLowerCase().includes(participantSearch.toLowerCase());
+    const matchDept = deptFilter === 'All' || p.department === deptFilter;
+    return matchSearch && matchDept;
+  });
+
+  const selectedEvent = events.find(e => (e.id || e._id) === selectedEventId);
 
   return (
     <DashboardLayout
@@ -94,52 +220,59 @@ const ClubDashboard = () => {
       searchPlaceholder="Search events, participants..."
       bottomWidget="support"
     >
+
       {/* ===== OVERVIEW ===== */}
       {activeView === 'overview' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-          {/* Stat Cards */}
+          {/* Stat Cards — real data */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <StatCardNew title="Total Registrations" value={String(totalRegistrations)} trend="+12.5%" trendUp icon={<Users className="w-5 h-5" />} subtitle="Growth compared to last month" accent="indigo" />
-            <StatCardNew title="Total Revenue" value={`₹${totalRevenue.toLocaleString()}`} trend="+8.2%" trendUp icon={<IndianRupee className="w-5 h-5" />} subtitle="Net earnings this quarter" accent="emerald" />
-            <StatCardNew title="Total Events" value={String(events.length)} trend="— 0%" icon={<CalendarPlus className="w-5 h-5" />} subtitle="Scheduled for this semester" accent="violet" />
+            <StatCardNew title="Total Registrations" value={String(totalRegistrations)} icon={<Users className="w-5 h-5" />} subtitle="Across all your events" accent="indigo" />
+            <StatCardNew title="Total Revenue" value={`₹${totalRevenue.toLocaleString()}`} icon={<IndianRupee className="w-5 h-5" />} subtitle="From paid event registrations" accent="emerald" />
+            <StatCardNew title="Total Events" value={String(events.length)} icon={<CalendarPlus className="w-5 h-5" />} subtitle={`${approvedEvents.length} approved, ${events.filter(e => e.status === 'Pending').length} pending`} accent="violet" />
           </div>
 
-          {/* Chart + Quick Overview */}
+          {/* Chart — real per-event registrations */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            {/* Chart */}
             <div className="lg:col-span-2 dashboard-card p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-white font-bold">Registration Trends</h3>
-                <button className="text-sm text-slate-400 bg-white/[0.04] px-3 py-1.5 rounded-lg border border-white/[0.06] flex items-center gap-1.5 hover:bg-white/[0.06] transition-colors">
-                  Last 7 Days <ChevronDown className="w-3.5 h-3.5" />
-                </button>
-              </div>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={ANALYTICS_DATA}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                    <XAxis dataKey="name" stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
-                    <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '12px', color: '#fff', fontSize: '13px' }} />
-                    <Line type="monotone" dataKey="regs" stroke="#6366f1" strokeWidth={2.5} dot={{ r: 0 }} activeDot={{ r: 5, strokeWidth: 0 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+              <h3 className="text-white font-bold mb-6">Registrations per Event</h3>
+              {chartData.length === 0 ? (
+                <div className="h-64 flex items-center justify-center text-slate-500 text-sm">No approved events yet</div>
+              ) : (
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                      <XAxis dataKey="name" stroke="#475569" fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#475569" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
+                      <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '12px', color: '#fff', fontSize: '13px' }} />
+                      <Line type="monotone" dataKey="regs" stroke="#6366f1" strokeWidth={2.5} dot={{ r: 4, fill: '#6366f1' }} activeDot={{ r: 6, strokeWidth: 0 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </div>
 
-            {/* Quick Overview */}
+            {/* Quick Overview — real numbers */}
             <div className="dashboard-card p-6 space-y-6">
               <h3 className="text-white font-bold">Quick Overview</h3>
-              <div className="space-y-5">
-                <MetricCircle value={78} label="Capacity Reach" sublabel="Average across all events" color="indigo" />
-                <MetricCircle value={92} label="Payment Success" sublabel="All gateway transactions" color="emerald" />
-              </div>
-              <div className="pt-4 border-t border-white/[0.06]">
-                <h4 className="text-indigo-400 text-[10px] uppercase tracking-widest font-bold mb-3">Recent Activity</h4>
-                <div className="space-y-3 text-sm">
-                  <ActivityDot text={<><strong>Aarav Kumar</strong> registered for "Web-A-Thon 2024"</>} />
-                  <ActivityDot text={<>Event <strong>"UI/UX Workshop"</strong> was approved by admin</>} />
-                </div>
+              <div className="space-y-4">
+                {events.length > 0 ? (
+                  events.slice(0, 4).map(e => (
+                    <div key={e.id || e._id} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
+                      <div className="min-w-0">
+                        <p className="text-slate-200 text-sm font-medium truncate">{e.title}</p>
+                        <p className="text-slate-500 text-xs">{e.date}</p>
+                      </div>
+                      <span className={`ml-3 shrink-0 px-2 py-0.5 text-[10px] font-bold rounded-md ${
+                        e.status === 'Approved' ? 'bg-emerald-500/10 text-emerald-400' :
+                        e.status === 'Rejected' ? 'bg-red-500/10 text-red-400' :
+                        'bg-amber-500/10 text-amber-400'
+                      }`}>{e.status}</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-slate-500 text-sm italic">No events created yet.</p>
+                )}
               </div>
             </div>
           </div>
@@ -147,8 +280,8 @@ const ClubDashboard = () => {
           {/* Active Events Table */}
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white font-bold text-lg">Active Events</h3>
-              <button className="text-indigo-400 text-sm font-medium hover:text-indigo-300">View All Events</button>
+              <h3 className="text-white font-bold text-lg">My Events</h3>
+              <button onClick={() => setActiveView('events')} className="text-indigo-400 text-sm font-medium hover:text-indigo-300">Manage Events →</button>
             </div>
             <div className="dashboard-card overflow-hidden">
               <table className="w-full text-left text-sm">
@@ -156,16 +289,20 @@ const ClubDashboard = () => {
                   <tr className="border-b border-white/[0.06]">
                     <th className="px-5 py-3.5 text-[11px] uppercase tracking-wider text-indigo-400 font-semibold">Event Name</th>
                     <th className="px-5 py-3.5 text-[11px] uppercase tracking-wider text-indigo-400 font-semibold">Date</th>
-                    <th className="px-5 py-3.5 text-[11px] uppercase tracking-wider text-indigo-400 font-semibold">Participants</th>
+                    <th className="px-5 py-3.5 text-[11px] uppercase tracking-wider text-indigo-400 font-semibold">Registrations</th>
                     <th className="px-5 py-3.5 text-[11px] uppercase tracking-wider text-indigo-400 font-semibold">Status</th>
                     <th className="px-5 py-3.5 text-[11px] uppercase tracking-wider text-indigo-400 font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.04]">
-                  {events.length === 0 ? (
+                  {loadingEvents ? (
+                    <tr><td colSpan={5} className="px-5 py-8 text-center text-slate-500">Loading events...</td></tr>
+                  ) : events.length === 0 ? (
                     <tr><td colSpan={5} className="px-5 py-8 text-center text-slate-500">No events yet. Create one!</td></tr>
-                  ) : events.map((event: any) => (
-                    <tr key={event._id} className="hover:bg-white/[0.02] transition-colors">
+                  ) : events.map((event: any) => {
+                    const eId = event.id || event._id;
+                    return (
+                    <tr key={eId} className="hover:bg-white/[0.02] transition-colors">
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-lg bg-indigo-600/20 flex items-center justify-center text-indigo-400 font-bold text-sm">
@@ -178,15 +315,9 @@ const ClubDashboard = () => {
                         </div>
                       </td>
                       <td className="px-5 py-3.5 text-slate-400">{event.date}</td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex -space-x-2">
-                          {[...Array(Math.min(event.registeredStudents?.length || 0, 3))].map((_, i) => (
-                            <div key={i} className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 ring-2 ring-[#0c1021] flex items-center justify-center text-[10px] text-white font-semibold">{i + 1}</div>
-                          ))}
-                          {(event.registeredStudents?.length || 0) > 3 && (
-                            <div className="w-7 h-7 rounded-full bg-white/[0.08] ring-2 ring-[#0c1021] flex items-center justify-center text-[10px] text-slate-300">+{event.registeredStudents.length - 3}</div>
-                          )}
-                        </div>
+                      <td className="px-5 py-3.5 text-slate-300 font-semibold">
+                        {event.registration_count ?? 0}
+                        <span className="text-slate-500 font-normal"> / {event.expectedAudience ?? event.expected_audience ?? '—'}</span>
                       </td>
                       <td className="px-5 py-3.5">
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider border ${
@@ -197,12 +328,12 @@ const ClubDashboard = () => {
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2">
-                          <button className="p-1.5 text-slate-500 hover:text-white hover:bg-white/[0.06] rounded-lg transition-colors"><Pencil className="w-4 h-4" /></button>
-                          <button onClick={() => handleDeleteEvent(event._id)} className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
+                          <button onClick={() => handleDeleteEvent(eId)} className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -232,8 +363,10 @@ const ClubDashboard = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {events.map((event: any) => (
-                <div key={event._id} className="dashboard-card p-5 hover:border-indigo-500/20 transition-all">
+              {events.map((event: any) => {
+                const eId = event.id || event._id;
+                return (
+                <div key={eId} className="dashboard-card p-5 hover:border-indigo-500/20 transition-all">
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <h3 className="text-white font-bold">{event.title}</h3>
@@ -242,18 +375,32 @@ const ClubDashboard = () => {
                         event.status === 'Rejected' ? 'bg-red-500/10 text-red-400' : 'bg-amber-500/10 text-amber-400'
                       }`}>{event.status}</span>
                     </div>
-                    <button onClick={() => handleDeleteEvent(event._id)} className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
+                    <button onClick={() => handleDeleteEvent(eId)} className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
                   </div>
                   <p className="text-sm text-slate-400 mb-4 line-clamp-2">{event.description}</p>
                   <div className="space-y-2 text-sm text-slate-400">
                     <div className="flex items-center gap-2"><CalendarDays className="w-3.5 h-3.5 text-slate-500" /> {event.date}</div>
                     <div className="flex items-center gap-2"><Clock className="w-3.5 h-3.5 text-slate-500" /> {event.time}</div>
                     <div className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5 text-slate-500" /> {event.location}</div>
-                    <div className="flex items-center gap-2"><Users className="w-3.5 h-3.5 text-slate-500" /> {event.registeredStudents?.length || 0} / {event.expectedAudience} registered</div>
-                    {event.regFee > 0 && <div className="flex items-center gap-2"><IndianRupee className="w-3.5 h-3.5 text-emerald-400" /> ₹{event.regFee} per student</div>}
+                    <div className="flex items-center gap-2"><Users className="w-3.5 h-3.5 text-slate-500" />
+                      <span className="font-semibold text-white">{event.registration_count ?? 0}</span>
+                      <span>/ {event.expectedAudience ?? event.expected_audience ?? '—'} registered</span>
+                    </div>
+                    {(event.regFee || event.reg_fee) > 0 && (
+                      <div className="flex items-center gap-2"><IndianRupee className="w-3.5 h-3.5 text-emerald-400" /> ₹{event.regFee || event.reg_fee} per student</div>
+                    )}
                   </div>
+                  {event.status === 'Approved' && (
+                    <button
+                      onClick={() => { setSelectedEventId(eId); setActiveView('participants'); }}
+                      className="mt-4 w-full py-2 rounded-xl bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 text-xs font-semibold transition-colors border border-indigo-500/20"
+                    >
+                      View {event.registration_count ?? 0} Participants →
+                    </button>
+                  )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </motion.div>
@@ -261,206 +408,272 @@ const ClubDashboard = () => {
 
       {/* ===== EVENT PARTICIPANTS ===== */}
       {activeView === 'participants' && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-md mx-auto relative pb-32">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6 relative px-1">
-            <button className="text-white p-1 -ml-1 hover:bg-white/[0.06] rounded-full transition-colors">
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-            <h2 className="text-xl font-bold text-white leading-tight">
-              Event Participants
-            </h2>
-            <button className="text-white p-1 hover:bg-white/[0.06] rounded-full transition-colors">
-              <span className="text-xl">🔍</span>
-            </button>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold text-white">Event Participants</h2>
           </div>
 
-          {/* Stats Box Row */}
-          <div className="flex gap-4 mb-5">
-            <div className="dashboard-card p-4 flex-1">
-              <p className="text-slate-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2">Total Registered</p>
-              <p className="text-indigo-500 text-3xl font-bold">247</p>
-            </div>
-            <div className="dashboard-card p-4 flex-1">
-              <p className="text-slate-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2">Checked In</p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-emerald-500 text-3xl font-bold">142</p>
-                <span className="bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full text-xs font-bold">57%</span>
+          {/* Event selector */}
+          <div className="dashboard-card p-4">
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Select Event</label>
+            <select
+              className="input-field"
+              value={selectedEventId}
+              onChange={e => { setSelectedEventId(e.target.value); setParticipantSearch(''); setDeptFilter('All'); }}
+            >
+              <option value="" className="bg-[#0c1021]">— Choose an event —</option>
+              {events.map(e => (
+                <option key={e.id || e._id} value={e.id || e._id} className="bg-[#0c1021]">
+                  {e.title} ({e.status}) — {e.date}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Stats for selected event */}
+          {selectedEvent && (
+            <div className="flex gap-4">
+              <div className="dashboard-card p-4 flex-1">
+                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-2">Total Registered</p>
+                <p className="text-indigo-400 text-3xl font-bold">{participants.length}</p>
+              </div>
+              <div className="dashboard-card p-4 flex-1">
+                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-2">Checked In (QR)</p>
+                <div className="flex items-baseline gap-2">
+                  <p className="text-emerald-400 text-3xl font-bold">
+                    {scannedLog.filter(s => s.eventId === selectedEventId).length}
+                  </p>
+                  {participants.length > 0 && (
+                    <span className="bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full text-xs font-bold">
+                      {Math.round((scannedLog.filter(s => s.eventId === selectedEventId).length / participants.length) * 100)}%
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Search and Filter */}
-          <div className="flex gap-3 mb-5">
+          {/* Search and Dept filter */}
+          <div className="flex gap-3">
             <div className="relative flex-1">
-              <input type="text" className="input-field pl-10 h-11 bg-white/[0.02] border-white/[0.04]" placeholder="Name or roll number..." />
+              <input
+                type="text"
+                className="input-field pl-10 h-11 bg-white/[0.02] border-white/[0.04]"
+                placeholder="Search by name or roll number..."
+                value={participantSearch}
+                onChange={e => setParticipantSearch(e.target.value)}
+              />
               <span className="absolute left-3 top-2.5 text-slate-500">🔍</span>
             </div>
-            <button className="w-11 h-11 bg-white/[0.04] border border-white/[0.06] rounded-xl flex items-center justify-center text-indigo-400 shrink-0">
-              <Settings className="w-5 h-5" />
-            </button>
           </div>
 
-          {/* Filter Tabs */}
-          <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-none px-1">
-            <button className="bg-indigo-600 text-white font-medium text-sm px-5 py-2 rounded-full whitespace-nowrap shadow-lg shadow-indigo-500/20">All</button>
-            <button className="bg-white/[0.04] text-slate-300 hover:text-white border border-white/[0.06] font-medium text-sm px-5 py-2 rounded-full whitespace-nowrap">CS</button>
-            <button className="bg-white/[0.04] text-slate-300 hover:text-white border border-white/[0.06] font-medium text-sm px-5 py-2 rounded-full whitespace-nowrap">Electrical</button>
-            <button className="bg-white/[0.04] text-slate-300 hover:text-white border border-white/[0.06] font-medium text-sm px-5 py-2 rounded-full whitespace-nowrap">Mechanical</button>
-          </div>
-
-          {/* Select All */}
-          <div className="flex items-center gap-3 mb-4 px-2">
-            <div className="w-5 h-5 rounded-[4px] border border-white/20 bg-white/[0.02]"></div>
-            <span className="text-sm font-medium text-slate-300">Select All</span>
-          </div>
-
-          {/* List items */}
-          <div className="space-y-3">
-            {[
-              { id: '1', name: 'Alex Rivera', desc: 'CS-2021-042 • 3rd Year', status: 'CHECKED IN', color: 'bg-indigo-500/20 text-indigo-400', img: 'https://i.pravatar.cc/150?u=alex', isCheckedIn: true },
-              { id: '2', name: 'Sarah Koenig', desc: 'ME-2022-118 • 2nd Year', status: 'REGISTERED', color: 'bg-indigo-600/20 text-indigo-400 border-indigo-500/30', init: 'SK', isCheckedIn: false },
-              { id: '3', name: 'Michael Chen', desc: 'CS-2021-089 • 3rd Year', status: 'CHECKED IN', color: 'bg-pink-500/20 text-pink-400', img: 'https://i.pravatar.cc/150?u=michael', isCheckedIn: true },
-              { id: '4', name: 'Jordan Parker', desc: 'EE-2023-012 • 1st Year', status: 'REGISTERED', color: 'bg-indigo-600/20 text-indigo-400 border-indigo-500/30', init: 'JP', isCheckedIn: false },
-              { id: '5', name: 'Emily Watson', desc: 'CS-2021-112 • 3rd Year', status: 'CHECKED IN', color: 'bg-orange-500/20 text-orange-400', img: 'https://i.pravatar.cc/150?u=emily', isCheckedIn: true }
-            ].map(s => (
-              <div key={s.id} className="dashboard-card p-4 flex items-center gap-3 sm:gap-4">
-                <div className="w-5 h-5 rounded-[4px] border border-white/20 bg-white/[0.02] shrink-0"></div>
-                {s.img ? (
-                  <img src={s.img} alt={s.name} className="w-12 h-12 rounded-full object-cover shrink-0 border border-white/10" />
-                ) : (
-                  <div className={`w-12 h-12 rounded-full shrink-0 flex items-center justify-center font-bold text-lg ${s.color}`}>
-                    {s.init}
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-white font-bold text-sm truncate">{s.name}</h4>
-                  <p className="text-slate-400 text-xs truncate mt-0.5">{s.desc}</p>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                  <span className={`px-2 py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider rounded-md ${
-                    s.isCheckedIn ? 'bg-emerald-500/10 text-emerald-400' : 'bg-indigo-500/10 text-indigo-400'
-                  }`}>
-                    {s.status}
-                  </span>
-                  <button className="text-slate-400 hover:text-white p-1">
-                    <span className="text-lg">⋮</span>
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Sticky FAB & Bottom Actions */}
-          <div className="fixed bottom-0 left-0 w-full z-50 flex flex-col items-center">
-            {/* FAB */}
-            <div className="w-full max-w-md flex justify-end px-4 mb-4 pointer-events-none">
-              <button className="bg-indigo-600 hover:bg-indigo-500 shadow-xl shadow-indigo-600/30 text-white font-semibold py-3 px-5 rounded-2xl flex items-center gap-2 pointer-events-auto">
-                <UserCheck className="w-5 h-5" /> Bulk Check-in
-              </button>
-            </div>
-            
-            {/* Bottom Nav */}
-            <div className="w-full max-w-md bg-[#080b14]/95 backdrop-blur-xl border-t border-white/[0.04]">
-              <div className="flex justify-around py-3">
-                <button className="text-indigo-500 p-2"><LayoutDashboard className="w-6 h-6" /></button>
-                <button className="text-slate-400 hover:text-white p-2"><Users className="w-6 h-6" /></button>
-                <button className="text-slate-400 hover:text-white p-2"><CalendarDays className="w-6 h-6" /></button>
-                <button className="text-slate-400 hover:text-white p-2"><Settings className="w-6 h-6" /></button>
-              </div>
-              
-              {/* Export Full Width Button */}
-              <div className="p-3 pt-1 pointer-events-auto">
-                <button className="w-full bg-indigo-600/90 hover:bg-indigo-600 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-colors">
-                  <span className="text-lg">↓</span> Export CSV
+          {/* Department filter tabs */}
+          {departments.length > 1 && (
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+              {departments.map(dept => (
+                <button
+                  key={dept}
+                  onClick={() => setDeptFilter(dept)}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                    deptFilter === dept
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
+                      : 'bg-white/[0.04] text-slate-300 hover:text-white border border-white/[0.06]'
+                  }`}
+                >
+                  {dept}
                 </button>
-              </div>
+              ))}
             </div>
-          </div>
+          )}
+
+          {/* Participants list — real data */}
+          {!selectedEventId ? (
+            <div className="dashboard-card p-12 text-center text-slate-500">Select an event above to view participants.</div>
+          ) : loadingParticipants ? (
+            <div className="dashboard-card p-12 text-center text-slate-500">
+              <div className="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mx-auto mb-3" />
+              Loading participants...
+            </div>
+          ) : filteredParticipants.length === 0 ? (
+            <div className="dashboard-card p-12 text-center text-slate-500">
+              {participants.length === 0
+                ? 'No students have registered for this event yet.'
+                : 'No participants match your search.'}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-slate-500 text-xs px-1">Showing {filteredParticipants.length} of {participants.length} participants</p>
+              {filteredParticipants.map((p, i) => {
+                const isCheckedIn = scannedLog.some(s => s.studentId === p.studentId && s.eventId === selectedEventId);
+                return (
+                  <div key={p.studentId || i} className="dashboard-card p-4 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold text-lg shrink-0">
+                      {p.name?.charAt(0)?.toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-white font-bold text-sm truncate">{p.name}</h4>
+                      <p className="text-slate-400 text-xs mt-0.5">
+                        {p.rollNumber} · {p.department}
+                      </p>
+                      <p className="text-slate-600 text-[10px] mt-0.5">
+                        Registered: {new Date(p.registeredAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </p>
+                    </div>
+                    <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md shrink-0 ${
+                      isCheckedIn ? 'bg-emerald-500/10 text-emerald-400' : 'bg-indigo-500/10 text-indigo-400'
+                    }`}>
+                      {isCheckedIn ? 'CHECKED IN' : 'REGISTERED'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </motion.div>
       )}
 
       {/* ===== QR SCANNER ===== */}
       {activeView === 'scanner' && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-md mx-auto relative pb-20">
-          <div className="flex items-center justify-center mb-6 relative">
-            <h2 className="text-xl font-bold text-white">QR Ticket Scanner</h2>
-            <button className="absolute right-0 w-9 h-9 bg-white/[0.04] hover:bg-white/[0.08] rounded-full flex items-center justify-center text-white transition-colors">🔦</button>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-md mx-auto space-y-5 pb-10">
+          <h2 className="text-xl font-bold text-white text-center">QR Ticket Scanner</h2>
+
+          {/* Event selector for scanner */}
+          <div className="dashboard-card p-4">
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Scan tickets for event</label>
+            <select
+              className="input-field"
+              value={scannerEventId}
+              onChange={e => { setScannerEventId(e.target.value); setScannedLog([]); }}
+            >
+              <option value="" className="bg-[#0c1021]">— Choose an event —</option>
+              {events.filter(e => e.status === 'Approved').map(e => (
+                <option key={e.id || e._id} value={e.id || e._id} className="bg-[#0c1021]">
+                  {e.title} — {e.date}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Scanner UI */}
-          <div className="dashboard-card p-6 flex flex-col items-center justify-center mb-6 relative overflow-hidden h-[300px]">
-             {/* Glow overlay */}
-             <div className="absolute inset-0 bg-indigo-500/5 backdrop-blur-[2px]"></div>
-             
-             {/* Scanner Box */}
-             <div className="w-64 h-64 relative z-10">
-                {/* Scanner corners */}
-                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-indigo-400 rounded-tl-xl shadow-[0_0_15px_rgba(99,102,241,0.5)]"></div>
-                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-indigo-400 rounded-tr-xl shadow-[0_0_15px_rgba(99,102,241,0.5)]"></div>
-                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-indigo-400 rounded-bl-xl shadow-[0_0_15px_rgba(99,102,241,0.5)]"></div>
-                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-indigo-400 rounded-br-xl shadow-[0_0_15px_rgba(99,102,241,0.5)]"></div>
-                
-                {/* Scan Line */}
-                <div className="absolute top-1/4 left-0 w-full h-1 bg-indigo-400 shadow-[0_0_20px_4px_rgba(99,102,241,0.8)] animate-[scan_2.5s_ease-in-out_infinite]"></div>
-             </div>
-          </div>
-          
-          <p className="text-white text-center font-medium mb-6">Align QR code within the frame to scan</p>
-
-          <div className="dashboard-card p-5 mb-4 border border-white/[0.06]">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-white font-bold text-sm">Auto Check-in</p>
-                <p className="text-slate-400 text-xs mt-0.5">Automatically process tickets on scan</p>
-              </div>
-              {/* Toggle switch mock */}
-              <div className="w-12 h-6 bg-indigo-500 rounded-full flex justify-end p-0.5 shadow-inner">
-                <div className="w-5 h-5 bg-white rounded-full shadow-md"></div>
+          {/* Scanner viewport */}
+          <div className="dashboard-card p-6 flex flex-col items-center justify-center relative overflow-hidden h-[280px]">
+            <div className="absolute inset-0 bg-indigo-500/5 backdrop-blur-[2px]" />
+            <div className="w-56 h-56 relative z-10">
+              <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-indigo-400 rounded-tl-xl shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
+              <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-indigo-400 rounded-tr-xl shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
+              <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-indigo-400 rounded-bl-xl shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
+              <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-indigo-400 rounded-br-xl shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
+              <div className="absolute top-1/4 left-0 w-full h-0.5 bg-indigo-400 shadow-[0_0_20px_4px_rgba(99,102,241,0.8)] animate-[scan_2.5s_ease-in-out_infinite]" />
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center gap-2">
+                <QrCode className="w-10 h-10 text-indigo-400/40" />
+                <p className="text-slate-500 text-xs">
+                  {scannerEventId ? 'Use manual entry below' : 'Select an event first'}
+                </p>
               </div>
             </div>
-            <button className="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-sm py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2">
-              ⌨ Enter Ticket ID Manually
+          </div>
+
+          <p className="text-slate-400 text-center text-sm">Align QR code within the frame to scan</p>
+
+          {/* Auto check-in toggle + manual entry */}
+          <div className="dashboard-card p-5 border border-white/[0.06] space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white font-bold text-sm">Auto Check-in</p>
+                <p className="text-slate-400 text-xs mt-0.5">Automatically log tickets on scan</p>
+              </div>
+              <button
+                onClick={() => setAutoCheckin(!autoCheckin)}
+                className={`w-12 h-6 rounded-full flex items-center p-0.5 transition-all ${autoCheckin ? 'bg-indigo-500 justify-end' : 'bg-white/10 justify-start'}`}
+              >
+                <div className="w-5 h-5 bg-white rounded-full shadow-md" />
+              </button>
+            </div>
+
+            {/* Manual entry */}
+            <AnimatePresence>
+              {showManualInput ? (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden space-y-2">
+                  <p className="text-xs text-slate-500">Format: <span className="font-mono text-indigo-400">EVT-{'<eventId>'}-STU-{'<studentId>'}</span></p>
+                  <div className="flex gap-2">
+                    <input
+                      className="input-field flex-1 text-sm"
+                      placeholder="Paste ticket code here..."
+                      value={manualTicket}
+                      onChange={e => setManualTicket(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleManualScan()}
+                    />
+                    <button onClick={handleManualScan} className="px-4 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-xl transition-colors">Go</button>
+                  </div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+
+            <button
+              onClick={() => setShowManualInput(!showManualInput)}
+              disabled={!scannerEventId}
+              className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed active:bg-indigo-700 text-white font-bold text-sm py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+            >
+              ⌨ {showManualInput ? 'Hide Manual Entry' : 'Enter Ticket ID Manually'}
             </button>
           </div>
 
-          <div className="flex items-center justify-between mb-3 px-1">
-            <h3 className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Recently Scanned</h3>
-            <button className="text-indigo-400 font-bold text-xs hover:text-indigo-300">View All</button>
-          </div>
+          {/* Stats for selected scanner event */}
+          {scannerEventId && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="dashboard-card p-3 text-center">
+                <p className="text-slate-500 text-[10px] uppercase tracking-widest mb-1">Registered</p>
+                <p className="text-white text-2xl font-bold">{participants.length}</p>
+              </div>
+              <div className="dashboard-card p-3 text-center">
+                <p className="text-slate-500 text-[10px] uppercase tracking-widest mb-1">Checked In</p>
+                <p className="text-emerald-400 text-2xl font-bold">
+                  {scannedLog.filter(s => s.eventId === scannerEventId).length}
+                </p>
+              </div>
+            </div>
+          )}
 
-          <div className="space-y-3">
-             <div className="dashboard-card p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#0c1021] border border-white/5 flex items-center justify-center">
-                    <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400">👤</div>
+          {/* Recently scanned — only real scans */}
+          <div>
+            <div className="flex items-center justify-between mb-3 px-1">
+              <h3 className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                Scanned This Session ({scannedLog.filter(s => s.eventId === scannerEventId).length})
+              </h3>
+              {scannedLog.length > 0 && (
+                <button onClick={() => setScannedLog([])} className="text-red-400 text-xs hover:text-red-300">Clear</button>
+              )}
+            </div>
+
+            {scannedLog.filter(s => s.eventId === scannerEventId).length === 0 ? (
+              <div className="dashboard-card p-8 text-center text-slate-500 text-sm">
+                No check-ins yet this session.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {scannedLog.filter(s => s.eventId === scannerEventId).map((s, i) => (
+                  <div key={i} className="dashboard-card p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 font-bold text-sm border border-emerald-500/20">
+                        {s.name?.charAt(0)}
+                      </div>
+                      <div>
+                        <h4 className="text-white font-bold text-sm">{s.name}</h4>
+                        <p className="text-slate-500 text-[10px] uppercase tracking-wide mt-0.5">
+                          {s.rollNumber} · {s.department}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-500 text-xs">
+                        {new Date(s.scannedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <div className="w-5 h-5 bg-emerald-500 text-[#0f1328] flex items-center justify-center rounded-full text-[10px] font-bold">✓</div>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-white font-bold text-sm">Sarah Jenkins</h4>
-                    <p className="text-slate-500 text-[10px] uppercase tracking-wide mt-0.5">ID: #SC-90421-B</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-500 text-xs">2m ago</span>
-                  <div className="w-5 h-5 bg-emerald-500 text-[#0f1328] flex items-center justify-center rounded-full text-[10px] font-bold shrink-0">✓</div>
-                </div>
-             </div>
-             
-             <div className="dashboard-card p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#0c1021] border border-white/5 flex items-center justify-center">
-                    <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400">👤</div>
-                  </div>
-                  <div>
-                    <h4 className="text-white font-bold text-sm">David Miller</h4>
-                    <p className="text-slate-500 text-[10px] uppercase tracking-wide mt-0.5">ID: #SC-88123-X</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-500 text-xs">5m ago</span>
-                  <div className="w-5 h-5 bg-emerald-500 text-[#0f1328] flex items-center justify-center rounded-full text-[10px] font-bold shrink-0">✓</div>
-                </div>
-             </div>
+                ))}
+              </div>
+            )}
           </div>
         </motion.div>
       )}
@@ -492,7 +705,6 @@ const ClubDashboard = () => {
               </div>
               <h3 className="text-white text-lg font-bold">{user.name}</h3>
               <p className="text-indigo-400 text-xs font-semibold uppercase tracking-widest mt-1">Official Club</p>
-              
               <div className="mt-6 pt-6 border-t border-white/[0.04] space-y-4 text-left">
                 <div>
                   <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest mb-1">Affiliated Dept</p>
@@ -504,7 +716,6 @@ const ClubDashboard = () => {
                 </div>
               </div>
             </div>
-
             <div className="md:col-span-2 space-y-6">
               <div className="dashboard-card p-6">
                 <h3 className="text-white font-bold mb-4">Club Statistics</h3>
@@ -519,11 +730,10 @@ const ClubDashboard = () => {
                   </div>
                 </div>
               </div>
-
               <div className="dashboard-card p-6">
                 <h3 className="text-white font-bold mb-4">About Club</h3>
                 <p className="text-slate-400 text-sm leading-relaxed">
-                  The {user.name} club is dedicated to fostering excellence and creativity within the {user.department} community. 
+                  The {user.name} club is dedicated to fostering excellence and creativity within the {user.department} community.
                   We organize technical and non-technical events to enhance student skills and engagement across the campus.
                 </p>
               </div>
@@ -554,7 +764,6 @@ const ClubDashboard = () => {
               </div>
 
               <div className="space-y-6 mt-6">
-                {/* Basic Info */}
                 <FormSection icon="ℹ" title="Basic Info" color="indigo">
                   <div>
                     <label className="form-label">Event Title</label>
@@ -577,7 +786,6 @@ const ClubDashboard = () => {
                   </div>
                 </FormSection>
 
-                {/* Logistics */}
                 <FormSection icon="📍" title="Logistics" color="amber">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
@@ -595,7 +803,6 @@ const ClubDashboard = () => {
                   </div>
                 </FormSection>
 
-                {/* Registration */}
                 <FormSection icon="🎫" title="Registration" color="emerald">
                   <div className="bg-white/[0.02] rounded-xl p-4 border border-white/[0.04] flex items-center gap-4 flex-wrap">
                     <div>
@@ -608,13 +815,11 @@ const ClubDashboard = () => {
                   </div>
                 </FormSection>
 
-                {/* Content */}
                 <FormSection icon="📝" title="Content" color="violet">
                   <div>
                     <label className="form-label">Description</label>
                     <textarea className="input-field resize-none h-24" placeholder="Describe the event..." value={formData.description} onChange={(e) => handleFormChange('description', e.target.value)} />
                   </div>
-                  {/* Rules */}
                   <div>
                     <label className="form-label">Event Rules</label>
                     <div className="space-y-2">
@@ -629,7 +834,6 @@ const ClubDashboard = () => {
                       <button onClick={() => addArrayItem('rules')} className="text-sm text-indigo-400 hover:text-indigo-300">+ Add Rule</button>
                     </div>
                   </div>
-                  {/* Prizes */}
                   <div>
                     <label className="form-label">Prizes (optional)</label>
                     <div className="space-y-2">
@@ -646,7 +850,6 @@ const ClubDashboard = () => {
                   </div>
                 </FormSection>
 
-                {/* Footer */}
                 <div className="flex items-center justify-between pt-4 border-t border-white/[0.06]">
                   <div className="flex items-center gap-2 text-emerald-500 text-xs font-semibold">
                     <span>🔒</span> Secured by Smart Campus
@@ -654,7 +857,7 @@ const ClubDashboard = () => {
                   <div className="flex gap-3">
                     <button onClick={() => setShowCreateModal(false)} className="px-6 py-2.5 text-sm font-medium text-slate-400 hover:text-white transition-colors">Cancel</button>
                     <button onClick={handleSubmitEvent} className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-6 py-2.5 rounded-xl flex items-center gap-2 transition-colors shadow-lg shadow-indigo-600/20">
-                      <ChevronDown className="w-4 h-4 rotate-[-90deg]" /> Propose Event
+                      Propose Event →
                     </button>
                   </div>
                 </div>
@@ -684,35 +887,6 @@ const StatCardNew = ({ title, value, trend, trendUp, icon, subtitle, accent }: a
     <p className="text-slate-500 text-xs mb-0.5">{title}</p>
     <p className="text-white text-3xl font-bold mb-1">{value}</p>
     <p className="text-slate-500 text-xs">{subtitle}</p>
-  </div>
-);
-
-const MetricCircle = ({ value, label, sublabel, color }: any) => {
-  const circumference = 2 * Math.PI * 24;
-  const offset = circumference - (value / 100) * circumference;
-  const colorClass = color === 'emerald' ? 'text-emerald-400' : 'text-indigo-400';
-  const strokeColor = color === 'emerald' ? '#10b981' : '#6366f1';
-  return (
-    <div className="flex items-center gap-4">
-      <div className="relative w-14 h-14">
-        <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
-          <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="4" />
-          <circle cx="28" cy="28" r="24" fill="none" stroke={strokeColor} strokeWidth="4" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" />
-        </svg>
-        <span className={`absolute inset-0 flex items-center justify-center text-xs font-bold ${colorClass}`}>{value}%</span>
-      </div>
-      <div>
-        <p className="text-white text-sm font-medium">{label}</p>
-        <p className="text-slate-500 text-xs">{sublabel}</p>
-      </div>
-    </div>
-  );
-};
-
-const ActivityDot = ({ text }: { text: React.ReactNode }) => (
-  <div className="flex items-start gap-2.5">
-    <span className="w-2 h-2 rounded-full bg-indigo-500 mt-1.5 flex-shrink-0" />
-    <span className="text-slate-400 text-xs leading-relaxed">{text}</span>
   </div>
 );
 

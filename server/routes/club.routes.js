@@ -5,6 +5,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const supabase = require('../utils/supabase');
+const { verifyToken, isAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -150,12 +151,12 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Admin - Get all clubs
-router.get('/all', async (req, res) => {
+// Admin - Get all clubs (protected: admin only)
+router.get('/all', verifyToken, isAdmin, async (req, res) => {
   try {
     const { data: clubs, error } = await supabase
       .from('clubs')
-      .select('id, name, email, coordinator, department, status, proofFile:proof_file, created_at')
+      .select('_id:id, id, name, email, coordinator, department, status, proofFile:proof_file, created_at')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -166,25 +167,44 @@ router.get('/all', async (req, res) => {
   }
 });
 
-// Admin - Update club status (Approve/Reject)
-router.patch('/:id/status', async (req, res) => {
+// Admin - Update club status (Approve/Reject) (protected: admin only)
+router.patch('/:id/status', verifyToken, isAdmin, async (req, res) => {
   try {
     const { status } = req.body;
+    const clubId = req.params.id;
+
     if (!['Approved', 'Rejected'].includes(status)) {
-      return res.status(400).json({ message: 'Invalid status' });
+      return res.status(400).json({ message: 'Invalid status. Must be Approved or Rejected.' });
     }
 
-    const { data: club, error } = await supabase
+    if (!clubId || clubId === 'undefined') {
+      return res.status(400).json({ message: 'Invalid club ID.' });
+    }
+
+    // First verify the club exists
+    const { data: existing, error: findError } = await supabase
       .from('clubs')
-      .update({ status })
-      .eq('id', req.params.id)
-      .select('id, name, email, coordinator, department, status, proofFile:proof_file, created_at')
+      .select('id, name')
+      .eq('id', clubId)
       .single();
 
-    if (error) return res.status(404).json({ message: 'Club not found' });
-    res.json({ message: `Club ${status} successfully`, club });
+    if (findError || !existing) {
+      return res.status(404).json({ message: `Club not found. ID: ${clubId}` });
+    }
+
+    // Update the status
+    const { data: club, error: updateError } = await supabase
+      .from('clubs')
+      .update({ status })
+      .eq('id', clubId)
+      .select('_id:id, id, name, email, coordinator, department, status, proofFile:proof_file, created_at')
+      .single();
+
+    if (updateError) throw updateError;
+
+    res.json({ message: `Club "${club.name}" ${status} successfully`, club });
   } catch (error) {
-    console.error(error);
+    console.error('Club status update error:', error);
     res.status(500).json({ message: 'Server error while updating club status' });
   }
 });

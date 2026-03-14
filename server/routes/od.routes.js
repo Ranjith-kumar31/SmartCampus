@@ -1,7 +1,9 @@
 const express = require('express');
 const supabase = require('../utils/supabase');
+const { verifyToken, isHOD } = require('../middleware/auth');
 
 const router = express.Router();
+
 
 // Student - create OD Request
 router.post('/', async (req, res) => {
@@ -80,16 +82,26 @@ router.get('/student/:id', async (req, res) => {
   }
 });
 
-// HOD - Get all OD requests (Pending)
-router.get('/pending', async (req, res) => {
+// HOD - Get all OD requests for students in the HOD's department
+router.get('/pending', verifyToken, isHOD, async (req, res) => {
   try {
+    const hodDepartment = req.decoded?.user?.department;
+    console.log(`OD pending: HOD dept = ${hodDepartment}`);
+
     const { data: requests, error } = await supabase
       .from('od_requests')
-      .select('*, _id:id, studentId:student_id, eventId:event_id, student:students(name, department, rollNumber:roll_number), event:events(title, date)')
+      .select('*, _id:id, studentId:student_id, eventId:event_id, student:students(id, name, department, rollNumber:roll_number), event:events(title, date)')
       .eq('status', 'Pending');
 
     if (error) throw error;
-    res.json(requests);
+
+    // Filter to only show ODs from students in HOD's department
+    const deptRequests = hodDepartment
+      ? (requests || []).filter(r => r.student?.department === hodDepartment)
+      : (requests || []);
+
+    console.log(`Returning ${deptRequests.length} OD requests for dept ${hodDepartment}`);
+    res.json(deptRequests);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error while fetching pending OD requests' });
