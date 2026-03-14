@@ -192,7 +192,10 @@ const HODdashboard = () => {
                       <tr key={req._id || req.id} className="hover:bg-white/[0.02] transition-colors">
                         <td className="px-5 py-3.5">
                           <p className="text-white font-medium">{req.student?.name || 'Unknown'}</p>
-                          <p className="text-slate-500 text-xs">{req.student?.rollNumber || 'N/A'}</p>
+                          <p className="text-slate-500 text-[10px] mt-0.5">
+                            {req.student?.rollNumber || 'N/A'} • {req.registration?.year || 'N/A'} {req.registration?.branch ? `(${req.registration.branch})` : ''}
+                          </p>
+                          {req.registration?.phone && <p className="text-slate-600 text-[9px] mt-0.5 whitespace-nowrap">📞 {req.registration.phone}</p>}
                         </td>
                         <td className="px-5 py-3.5">
                           <p className="text-slate-300 text-sm">{req.event?.title || 'N/A'}</p>

@@ -827,16 +827,28 @@ const TicketCardCompact = ({ event, userId }: any) => (
         <span className="text-slate-500 text-xs font-mono">Ref: #INT-{event._id.slice(-5)}</span>
       </div>
       <h3 className="text-white text-lg font-bold mb-4">{event.title}</h3>
-      <div className="flex gap-6">
+      <div className="flex flex-wrap gap-x-6 gap-y-3">
         <div>
           <p className="text-[10px] uppercase tracking-widest text-slate-500 mb-0.5">Date</p>
           <p className="text-white text-sm font-semibold">{event.date}</p>
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-widest text-slate-500 mb-0.5">Seat</p>
+          <p className="text-[10px] uppercase tracking-widest text-slate-500 mb-0.5">Location</p>
           <p className="text-white text-sm font-semibold">{event.location?.split(',')[0] || 'General'}</p>
         </div>
+        {event.year && (
+          <div>
+            <p className="text-[10px] uppercase tracking-widest text-slate-500 mb-0.5">Year</p>
+            <p className="text-indigo-400 text-sm font-semibold">{event.year}</p>
+          </div>
+        )}
       </div>
+      {event.phone && (
+        <div className="mt-3 flex items-center gap-2 text-[10px] text-slate-500 italic">
+          <span>📞 Registered Phone: {event.phone}</span>
+          {event.branch && <span>• {event.branch}</span>}
+        </div>
+      )}
     </div>
     <div className="flex flex-col items-center justify-center px-6 py-5 bg-white/[0.02] border-l border-white/[0.06] min-w-[140px]">
       <div className="bg-white p-2 rounded-lg mb-2">

@@ -95,10 +95,31 @@ router.get('/pending', verifyToken, isHOD, async (req, res) => {
 
     if (error) throw error;
 
-    // Filter to only show ODs from students in HOD's department
-    const deptRequests = hodDepartment
+    // Filter to HOD's department
+    let deptRequests = hodDepartment
       ? (requests || []).filter(r => r.student?.department === hodDepartment)
       : (requests || []);
+
+    // If there are requests, fetch the registration details (phone, year, branch) for these student-event pairs
+    if (deptRequests.length > 0) {
+      const studentIds = deptRequests.map(r => r.student_id);
+      const eventIds = deptRequests.map(r => r.event_id);
+
+      const { data: regs } = await supabase
+        .from('event_registrations')
+        .select('student_id, event_id, phone, year, branch')
+        .in('student_id', studentIds)
+        .in('event_id', eventIds);
+
+      // Attach regs to requests
+      deptRequests = deptRequests.map(r => {
+        const reg = (regs || []).find(rg => rg.student_id === r.student_id && rg.event_id === r.event_id);
+        return {
+          ...r,
+          registration: reg || null
+        };
+      });
+    }
 
     console.log(`Returning ${deptRequests.length} OD requests for dept ${hodDepartment}`);
     res.json(deptRequests);
