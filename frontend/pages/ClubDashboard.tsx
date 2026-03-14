@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, CalendarPlus, Users, QrCode, BarChart2, Settings, PlusCircle, Trash2, Clock, MapPin, CalendarDays, IndianRupee, X, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, CalendarPlus, Users, QrCode, BarChart2, Settings, PlusCircle, Trash2, Clock, MapPin, CalendarDays, IndianRupee, X, TrendingUp, ChevronRight, Phone, GraduationCap, Mail, BadgeCheck, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import axios from 'axios';
@@ -41,6 +41,7 @@ const ClubDashboard = () => {
   const [loadingParticipants, setLoadingParticipants] = useState(false);
   const [participantSearch, setParticipantSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState('All');
+  const [selectedParticipant, setSelectedParticipant] = useState<any>(null);
 
   // QR Scanner state
   const [scannerEventId, setScannerEventId] = useState<string>('');
@@ -207,6 +208,7 @@ const ClubDashboard = () => {
   const selectedEvent = events.find(e => (e.id || e._id) === selectedEventId);
 
   return (
+    <>
     <DashboardLayout
       title={`${user.name} Club Dashboard`}
       subtitle="Events"
@@ -503,16 +505,20 @@ const ClubDashboard = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-slate-500 text-xs px-1">Showing {filteredParticipants.length} of {participants.length} participants</p>
+              <p className="text-slate-500 text-xs px-1">Showing {filteredParticipants.length} of {participants.length} participants — <span className="text-indigo-400">click a row to view full details</span></p>
               {filteredParticipants.map((p, i) => {
                 const isCheckedIn = scannedLog.some(s => s.studentId === p.studentId && s.eventId === selectedEventId);
                 return (
-                  <div key={p.studentId || i} className="dashboard-card p-4 flex items-center gap-4">
+                  <div
+                    key={p.studentId || i}
+                    className="dashboard-card p-4 flex items-center gap-4 cursor-pointer hover:border-indigo-500/30 hover:bg-indigo-500/[0.03] transition-all duration-200 group"
+                    onClick={() => setSelectedParticipant({ ...p, isCheckedIn })}
+                  >
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold text-lg shrink-0">
                       {p.name?.charAt(0)?.toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-white font-bold text-sm truncate">{p.name}</h4>
+                      <h4 className="text-white font-bold text-sm truncate group-hover:text-indigo-300 transition-colors">{p.name}</h4>
                       <p className="text-slate-400 text-xs mt-0.5">
                         {p.rollNumber} · {p.department}
                       </p>
@@ -520,11 +526,14 @@ const ClubDashboard = () => {
                         Registered: {new Date(p.registeredAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </p>
                     </div>
-                    <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md shrink-0 ${
-                      isCheckedIn ? 'bg-emerald-500/10 text-emerald-400' : 'bg-indigo-500/10 text-indigo-400'
-                    }`}>
-                      {isCheckedIn ? 'CHECKED IN' : 'REGISTERED'}
-                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md ${
+                        isCheckedIn ? 'bg-emerald-500/10 text-emerald-400' : 'bg-indigo-500/10 text-indigo-400'
+                      }`}>
+                        {isCheckedIn ? 'CHECKED IN' : 'REGISTERED'}
+                      </span>
+                      <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-indigo-400 transition-colors" />
+                    </div>
                   </div>
                 );
               })}
@@ -867,6 +876,105 @@ const ClubDashboard = () => {
         )}
       </AnimatePresence>
     </DashboardLayout>
+
+    {/* ===== PARTICIPANT DETAIL MODAL ===== */}
+    <AnimatePresence>
+      {selectedParticipant && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm"
+          onClick={() => setSelectedParticipant(null)}
+        >
+          <motion.div
+            initial={{ y: 60, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 60, opacity: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="bg-[#0c1021] border border-white/[0.08] rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md shadow-2xl overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="relative p-6 pb-4 border-b border-white/[0.06]">
+              <button
+                onClick={() => setSelectedParticipant(null)}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/[0.12] flex items-center justify-center text-slate-400 hover:text-white transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              {/* Avatar + Name */}
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-extrabold text-2xl shadow-lg shadow-indigo-500/20">
+                  {selectedParticipant.name?.charAt(0)?.toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="text-white font-bold text-lg leading-tight">{selectedParticipant.name}</h3>
+                  <p className="text-slate-400 text-sm mt-0.5">{selectedParticipant.rollNumber}</p>
+                  <span className={`inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                    selectedParticipant.isCheckedIn
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      : 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
+                  }`}>
+                    {selectedParticipant.isCheckedIn
+                      ? <><BadgeCheck className="w-3 h-3" /> Checked In</>
+                      : <><XCircle className="w-3 h-3" /> Not Yet Checked In</>}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Details Grid */}
+            <div className="p-6 space-y-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Registration Details</p>
+
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { icon: <GraduationCap className="w-4 h-4" />, label: 'Department', value: selectedParticipant.department, color: 'text-indigo-400' },
+                  { icon: <GraduationCap className="w-4 h-4" />, label: 'Year', value: selectedParticipant.year !== 'N/A' ? selectedParticipant.year : '—', color: 'text-violet-400' },
+                  { icon: <Mail className="w-4 h-4" />, label: 'Email', value: selectedParticipant.email, color: 'text-cyan-400', span: true },
+                  { icon: <Phone className="w-4 h-4" />, label: 'Phone', value: selectedParticipant.phone !== 'N/A' ? selectedParticipant.phone : '—', color: 'text-emerald-400' },
+                  { icon: <BadgeCheck className="w-4 h-4" />, label: 'Branch / Section', value: selectedParticipant.branch !== 'N/A' ? selectedParticipant.branch : '—', color: 'text-amber-400' },
+                ].map(({ icon, label, value, color, span }) => (
+                  <div key={label} className={`bg-white/[0.03] border border-white/[0.05] rounded-xl p-3 ${span ? 'col-span-2' : ''}`}>
+                    <div className={`flex items-center gap-1.5 ${color} mb-1`}>{icon}<span className="text-[10px] font-bold uppercase tracking-wider">{label}</span></div>
+                    <p className="text-white text-sm font-medium truncate">{value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Registration timestamp */}
+              <div className="bg-white/[0.02] border border-white/[0.04] rounded-xl p-3 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-0.5">Registered On</p>
+                  <p className="text-white text-sm font-medium">
+                    {new Date(selectedParticipant.registeredAt).toLocaleString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+                <div className="text-2xl">🎫</div>
+              </div>
+
+              {/* Ticket QR reference */}
+              <div className="bg-white/[0.02] border border-white/[0.04] rounded-xl p-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Ticket Reference</p>
+                <p className="font-mono text-indigo-400 text-xs break-all">
+                  EVT-{selectedEventId}-STU-{selectedParticipant.studentId}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setSelectedParticipant(null)}
+                className="w-full py-3 bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white text-sm font-semibold rounded-xl transition-all border border-white/[0.06] mt-2"
+              >
+                Close
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+    </>
   );
 };
 
