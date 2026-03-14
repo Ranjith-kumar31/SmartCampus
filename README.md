@@ -95,7 +95,7 @@ The platform includes an **Advanced CampusBot** accessible via the chat icon in 
 - **Event Analysis**: "Show me AI workshops in my department."
 - **Knowledge Retrieval**: "What is Quantum Computing?" (Wiki + Web Search).
 - **Campus Info**: "How do I apply for OD?"
-- **Spelling Correction**: Handles typos like "evnts" or "hckathon" autooooooooooooo.
+- **Spelling Correction**: Handles typos like "evnts" or "hckathon" automatic.
 
 ---
 
