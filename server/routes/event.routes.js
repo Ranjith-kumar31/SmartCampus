@@ -331,7 +331,7 @@ router.get('/:id/participants', async (req, res) => {
   try {
     const { data: registrations, error } = await supabase
       .from('event_registrations')
-      .select('id, registered_at, phone, year, branch, student_id, student:students(id, name, email, department, rollNumber:roll_number)')
+      .select('id, registered_at, phone, year, branch, student_id, is_checked_in, checked_in_at, student:students(id, name, email, department, rollNumber:roll_number)')
       .eq('event_id', req.params.id)
       .order('registered_at', { ascending: false });
 
@@ -351,12 +351,56 @@ router.get('/:id/participants', async (req, res) => {
       phone: r.phone || 'N/A',
       year: r.year || 'N/A',
       branch: r.branch || 'N/A',
+      isCheckedIn: r.is_checked_in || false,
+      checkedInAt: r.checked_in_at,
     }));
 
     res.json({ count: participants.length, participants });
   } catch (error) {
     console.error('Participants error:', error);
     res.status(500).json({ message: 'Server error while fetching participants' });
+  }
+});
+
+// Club - Mark participant as checked in (QR Scanner)
+router.post('/:id/check-in', async (req, res) => {
+  try {
+    const { id: eventId } = req.params;
+    const { studentId } = req.body;
+
+    if (!studentId) return res.status(400).json({ message: 'Student ID required' });
+
+    // 1. Verify registration exists
+    const { data: reg, error: fetchErr } = await supabase
+      .from('event_registrations')
+      .select('id, is_checked_in')
+      .eq('event_id', eventId)
+      .eq('student_id', studentId)
+      .single();
+
+    if (fetchErr || !reg) {
+      return res.status(404).json({ message: 'Registration not found for this student and event' });
+    }
+
+    if (reg.is_checked_in) {
+      return res.status(400).json({ message: 'Student already checked in' });
+    }
+
+    // 2. Update status
+    const { error: updateErr } = await supabase
+      .from('event_registrations')
+      .update({
+        is_checked_in: true,
+        checked_in_at: new Date().toISOString()
+      })
+      .eq('id', reg.id);
+
+    if (updateErr) throw updateErr;
+
+    res.json({ message: 'Check-in successful! ✅' });
+  } catch (error) {
+    console.error('Check-in error:', error);
+    res.status(500).json({ message: 'Server error during check-in' });
   }
 });
 

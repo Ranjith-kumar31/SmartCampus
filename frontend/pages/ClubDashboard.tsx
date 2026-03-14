@@ -140,7 +140,7 @@ const ClubDashboard = () => {
   };
 
   /* ── QR scan simulation: match ticket string "EVT-<evtId>-STU-<stuId>" ── */
-  const handleManualScan = () => {
+  const handleManualScan = async () => {
     if (!manualTicket.trim()) { toast.error('Enter a ticket ID'); return; }
     const parts = manualTicket.trim().split('-STU-');
     if (parts.length !== 2 || !parts[0].startsWith('EVT-')) {
@@ -163,24 +163,35 @@ const ClubDashboard = () => {
       return;
     }
 
-    const alreadyScanned = scannedLog.find(s => s.studentId === studentId && s.eventId === currentEventId);
-    if (alreadyScanned) {
+    if (participant.isCheckedIn) {
       toast('Already checked in!', { icon: '⚠️' });
       return;
     }
 
-    const logEntry = {
-      studentId,
-      eventId: currentEventId,
-      name: participant.name,
-      rollNumber: participant.rollNumber,
-      department: participant.department,
-      scannedAt: new Date(),
-    };
-    setScannedLog(prev => [logEntry, ...prev]);
-    toast.success(`✅ ${participant.name} checked in!`);
-    setManualTicket('');
-    setShowManualInput(false);
+    try {
+      await api.post(`/events/${currentEventId}/check-in`, { studentId });
+      
+      const logEntry = {
+        studentId,
+        eventId: currentEventId,
+        name: participant.name,
+        rollNumber: participant.rollNumber,
+        department: participant.department,
+        scannedAt: new Date(),
+      };
+      
+      setScannedLog(prev => [logEntry, ...prev]);
+      
+      // Update local participants state to avoid refetch
+      setParticipants(prev => prev.map(p => 
+        p.studentId === studentId ? { ...p, isCheckedIn: true, checkedInAt: new Date().toISOString() } : p
+      ));
+
+      if (autoCheckin) toast.success(`Check-in successful: ${participant.name} ✅`);
+      setManualTicket('');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Check-in failed');
+    }
   };
 
   /* ── Derived data ── */
@@ -507,7 +518,7 @@ const ClubDashboard = () => {
             <div className="space-y-3">
               <p className="text-slate-500 text-xs px-1">Showing {filteredParticipants.length} of {participants.length} participants — <span className="text-indigo-400">click a row to view full details</span></p>
               {filteredParticipants.map((p, i) => {
-                const isCheckedIn = scannedLog.some(s => s.studentId === p.studentId && s.eventId === selectedEventId);
+                const isCheckedIn = p.isCheckedIn;
                 return (
                   <div
                     key={p.studentId || i}
@@ -637,7 +648,7 @@ const ClubDashboard = () => {
               <div className="dashboard-card p-3 text-center">
                 <p className="text-slate-500 text-[10px] uppercase tracking-widest mb-1">Checked In</p>
                 <p className="text-emerald-400 text-2xl font-bold">
-                  {scannedLog.filter(s => s.eventId === scannerEventId).length}
+                  {participants.filter(p => p.isCheckedIn).length}
                 </p>
               </div>
             </div>
