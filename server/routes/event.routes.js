@@ -266,16 +266,16 @@ router.get('/student/:studentId/registered', async (req, res) => {
 
     const { data: registrations, error } = await supabase
       .from('event_registrations')
-      .select('id, created_at, phone, year, branch, event:events(id, title, domain, date, time, location, description, status, reg_fee, club:clubs(name))')
+      .select('id, registered_at, phone, year, branch, event:events(id, title, domain, date, time, location, description, status, reg_fee, club:clubs(name))')
       .eq('student_id', studentId)
-      .order('created_at', { ascending: false });
+      .order('registered_at', { ascending: false });
 
     if (error) throw error;
 
     // Shape the response
     const registeredEvents = (registrations || []).map(r => ({
       registrationId: r.id,
-      registeredAt: r.created_at,
+      registeredAt: r.registered_at,
       phone: r.phone,
       year: r.year,
       branch: r.branch,
@@ -331,15 +331,18 @@ router.get('/:id/participants', async (req, res) => {
   try {
     const { data: registrations, error } = await supabase
       .from('event_registrations')
-      .select('*, student:students(id, name, email, department, rollNumber:roll_number)')
+      .select('id, registered_at, phone, year, branch, student_id, student:students(id, name, email, department, rollNumber:roll_number)')
       .eq('event_id', req.params.id)
-      .order('created_at', { ascending: false });
+      .order('registered_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Participants Supabase error:', JSON.stringify(error));
+      throw error;
+    }
 
     const participants = (registrations || []).map(r => ({
       registrationId: r.id,
-      registeredAt: r.created_at,
+      registeredAt: r.registered_at,
       studentId: r.student_id,
       name: r.student?.name || 'Unknown',
       email: r.student?.email || 'N/A',
@@ -356,6 +359,7 @@ router.get('/:id/participants', async (req, res) => {
     res.status(500).json({ message: 'Server error while fetching participants' });
   }
 });
+
 
 
 // Delete an event (Club)
