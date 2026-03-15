@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, LogOut, Menu, HelpCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Bell, LogOut, Menu, HelpCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ChatbotWidget from '../ChatbotWidget';
 
@@ -38,7 +38,7 @@ const DashboardLayout = ({
   onViewChange,
   userName,
   userRole,
-  accentColor = 'indigo',
+
   searchPlaceholder = 'Search...',
   bottomWidget = 'support',
   userId,
@@ -55,17 +55,12 @@ const DashboardLayout = ({
     navigate('/');
   };
 
-  const accentClasses: Record<string, { bg: string; text: string; activeBg: string; ring: string }> = {
-    indigo: { bg: 'bg-indigo-600', text: 'text-indigo-400', activeBg: 'bg-indigo-600', ring: 'ring-indigo-500/30' },
-    emerald: { bg: 'bg-emerald-600', text: 'text-emerald-400', activeBg: 'bg-emerald-600', ring: 'ring-emerald-500/30' },
-    violet: { bg: 'bg-violet-600', text: 'text-violet-400', activeBg: 'bg-violet-600', ring: 'ring-violet-500/30' },
-    blue: { bg: 'bg-blue-600', text: 'text-blue-400', activeBg: 'bg-blue-600', ring: 'ring-blue-500/30' },
-  };
 
-  const accent = accentClasses[accentColor] || accentClasses.indigo;
+
+
 
   return (
-    <div className="flex h-screen bg-[#080b14] overflow-hidden">
+    <div className="flex h-screen bg-slate-50 overflow-hidden">
       {/* Logout Confirmation Modal */}
       <AnimatePresence>
         {showLogoutModal && (
@@ -74,40 +69,38 @@ const DashboardLayout = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
               onClick={() => setShowLogoutModal(false)}
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-sm bg-[#0c1021] border border-white/[0.08] rounded-2xl shadow-2xl p-6"
+              className="relative w-full max-w-sm bg-white border border-slate-200 rounded-[2.5rem] shadow-2xl p-10 mt-[-10vh]"
             >
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0">
-                  <LogOut className="w-6 h-6 text-red-500" />
+              <div className="flex flex-col items-center text-center">
+                <div className="w-20 h-20 rounded-[2rem] bg-red-50 flex items-center justify-center mb-6">
+                  <LogOut className="w-10 h-10 text-red-500" />
                 </div>
-                <div>
-                  <h3 className="text-white font-bold text-lg">Confirm Logout</h3>
-                  <p className="text-slate-400 text-sm">Do you want to logout?</p>
+                <h3 className="text-primary font-bold text-2xl mb-2">Sign Out?</h3>
+                <p className="text-slate-500 mb-8 px-4 font-medium">Are you sure you want to end your current session?</p>
+                <div className="flex w-full gap-4">
+                  <button
+                    onClick={() => setShowLogoutModal(false)}
+                    className="flex-1 px-6 py-4 rounded-2xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowLogoutModal(false);
+                      handleLogout();
+                    }}
+                    className="flex-1 px-6 py-4 rounded-2xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20"
+                  >
+                    Yes, Logout
+                  </button>
                 </div>
-              </div>
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={() => setShowLogoutModal(false)}
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-white/[0.08] text-slate-300 text-sm font-medium hover:bg-white/[0.04] transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    setShowLogoutModal(false);
-                    handleLogout();
-                  }}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20"
-                >
-                  Logout
-                </button>
               </div>
             </motion.div>
           </div>
@@ -121,37 +114,38 @@ const DashboardLayout = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+            className="fixed inset-0 bg-primary/20 backdrop-blur-sm z-40 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
       </AnimatePresence>
 
       {/* Sidebar */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-[220px] bg-[#0c1021] border-r border-white/[0.06] flex flex-col transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        {/* Logo — click triggers logout confirmation */}
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-[280px] bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        {/* Logo */}
         <div
-          className="px-5 py-5 flex items-center gap-3 cursor-pointer group"
-          onClick={() => setShowLogoutModal(true)}
+          className="px-8 py-10 flex items-center gap-4 group cursor-pointer"
+          onClick={() => navigate('/')}
         >
-          <img
-            src="/logo.jpg"
-            alt="Logo"
-            className="w-10 h-10 rounded-xl shadow-lg shadow-white/10 shrink-0 object-cover group-hover:scale-105 transition-transform"
-          />
+          <div className="bg-primary/5 p-2 rounded-2xl border border-primary/10">
+            <img
+              src="/logo.jpg"
+              alt="Logo"
+              className="w-10 h-10 rounded-xl shrink-0 object-cover"
+            />
+          </div>
           <div>
-            <h1 className="text-white font-bold text-lg leading-tight">
-              Smart Campus<br />
-              <span className="text-[10px] text-indigo-400 font-normal">Event Management</span>
+            <h1 className="text-primary font-black text-xl leading-[0.9] tracking-tighter">
+              Smart<span className="text-secondary font-black">Campus</span>
             </h1>
-            <p className={`text-[10px] uppercase tracking-[0.2em] font-semibold ${accent.text}`}>
-              {subtitle || 'Events Hub'}
+            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mt-1.5 px-0.5">
+              {subtitle || 'Management Hub'}
             </p>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 pt-4 space-y-1">
+        <nav className="flex-1 px-4 space-y-2">
           {navItems.map((item) => {
             const isActive = activeView === item.id;
             const Icon = item.icon;
@@ -162,48 +156,47 @@ const DashboardLayout = ({
                   onViewChange(item.id);
                   setSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 ${
+                className={`w-full flex items-center gap-4 px-5 py-4 rounded-[1.25rem] text-sm font-bold transition-all duration-300 ${
                   isActive
-                    ? `${accent.activeBg} text-white shadow-lg shadow-indigo-500/20`
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
+                    ? `bg-primary text-white shadow-xl shadow-primary/15 scale-[1.02]`
+                    : 'text-slate-500 hover:text-primary hover:bg-primary/5'
                 }`}
               >
-                <Icon className="w-[18px] h-[18px]" />
+                <Icon className={`w-5 h-5 ${isActive ? 'text-secondary' : ''}`} />
                 {item.label}
               </button>
             );
           })}
         </nav>
 
-        {/* Bottom Widget */}
-        <div className="px-3 pb-4 mt-auto">
+        {/* Bottom Area */}
+        <div className="px-5 pb-8 mt-auto">
           {bottomWidget === 'support' ? (
-            <div className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.06]">
-              <p className="text-slate-500 text-xs">Need help?</p>
-              <p className="text-slate-300 text-sm font-medium mb-3">Visit Support Center</p>
-              <button className={`w-full ${accent.bg} text-white text-xs font-semibold py-2 rounded-lg hover:opacity-90 transition-opacity`}>
-                Contact Us
+            <div className="bg-slate-50 rounded-[2rem] p-6 border border-slate-100">
+              <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Help Center</p>
+              <p className="text-primary font-bold text-sm mb-4 leading-tight">Got questions? We're here to help.</p>
+              <button className={`w-full bg-primary text-white text-xs font-bold py-3 px-4 rounded-xl hover:bg-primary/95 transition-all shadow-md active:scale-95`}>
+                Contact Support
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-3 px-2 py-3 border-t border-white/[0.06]">
-              <div className={`w-9 h-9 rounded-full ${accent.bg}/20 flex items-center justify-center`}>
-                <span className={`${accent.text} font-bold text-sm`}>{userName.charAt(0)}</span>
+            <div className="flex items-center gap-4 px-3 py-4 border-t border-slate-100">
+              <div className="w-11 h-11 rounded-2xl bg-primary/5 flex items-center justify-center border border-primary/10">
+                <span className="text-primary font-black text-base">{userName.charAt(0)}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-white text-sm font-medium truncate">{userName}</p>
-                <p className="text-slate-500 text-xs truncate">{userRole}</p>
+                <p className="text-primary text-sm font-bold truncate tracking-tight">{userName}</p>
+                <p className="text-slate-400 text-xs font-semibold tabular-nums tracking-widest uppercase">{userRole}</p>
               </div>
             </div>
           )}
 
-          {/* Sidebar Logout Button */}
           <button
             onClick={() => setShowLogoutModal(true)}
-            className="w-full flex items-center gap-3 px-3 py-2.5 mt-2 rounded-xl text-[13px] font-medium text-slate-400 hover:text-red-400 hover:bg-red-500/5 transition-all"
+            className="w-full flex items-center gap-4 px-5 py-4 mt-4 rounded-[1.25rem] text-sm font-bold text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all"
           >
-            <LogOut className="w-[18px] h-[18px]" />
-            Logout
+            <LogOut className="w-5 h-5" />
+            Sign Out
           </button>
         </div>
       </aside>
@@ -211,69 +204,54 @@ const DashboardLayout = ({
       {/* Main Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Bar */}
-        <header className="h-16 border-b border-white/[0.06] bg-[#0c1021]/80 backdrop-blur-xl flex items-center px-4 lg:px-6 flex-shrink-0">
+        <header className="h-24 bg-white/80 backdrop-blur-xl flex items-center px-6 lg:px-10 flex-shrink-0 relative z-30">
           {/* Mobile menu toggle */}
-          <button className="lg:hidden mr-3 text-slate-400 hover:text-white" onClick={() => setSidebarOpen(true)}>
-            <Menu className="w-5 h-5" />
+          <button className="lg:hidden mr-4 p-2 bg-slate-100 rounded-xl text-slate-600 hover:text-primary transition-colors" onClick={() => setSidebarOpen(true)}>
+            <Menu className="w-6 h-6" />
           </button>
 
-          {/* Back / Forward navigation */}
-          <div className="flex items-center gap-1 mr-4">
-            <button
-              onClick={() => navigate(-1)}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.04] transition-all border border-transparent hover:border-white/[0.08]"
-              title="Go back"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => navigate(1)}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.04] transition-all border border-transparent hover:border-white/[0.08]"
-              title="Go forward"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2 text-white font-semibold text-[15px]">
-            {titleIcon}
-            {title}
+          {/* Page Title Area */}
+          <div className="flex flex-col">
+            <div className="flex items-center gap-3 text-primary font-black text-2xl tracking-tight">
+              {titleIcon}
+              {title}
+            </div>
           </div>
 
           {/* Search */}
-          <div className="hidden md:flex items-center ml-8 flex-1 max-w-md">
-            <div className="relative w-full">
-              <svg className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <div className="hidden xl:flex items-center ml-12 flex-1 max-w-md">
+            <div className="relative w-full group">
+              <svg className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
                 type="text"
                 placeholder={searchPlaceholder}
-                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl pl-10 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/30 focus:ring-1 focus:ring-indigo-500/20 transition-all"
+                className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-6 py-3.5 text-sm text-primary font-medium placeholder-slate-400 focus:outline-none focus:border-primary/20 focus:ring-4 focus:ring-primary/5 transition-all"
               />
             </div>
           </div>
 
-          {/* Right side */}
-          <div className="flex items-center gap-4 ml-auto">
-            <button className="relative text-slate-400 hover:text-white transition-colors">
-              <Bell className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full ring-2 ring-[#0c1021]" />
+          {/* Right side icons */}
+          <div className="flex items-center gap-5 ml-auto">
+            <button className="relative p-3 bg-slate-50 border border-slate-100 rounded-2xl text-slate-400 hover:text-primary hover:bg-white hover:shadow-md transition-all">
+              <Bell className="w-6 h-6" />
+              <span className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white" />
             </button>
 
-            <div className="relative pl-4 border-l border-white/[0.08]">
+            <div className="relative pl-6 border-l border-slate-200">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                className="flex items-center gap-4 group"
               >
                 <div className="text-right hidden sm:block">
-                  <p className="text-white text-sm font-medium">{userName}</p>
-                  <p className="text-slate-500 text-[10px] tabular-nums">
+                  <p className="text-primary text-sm font-black tracking-tight leading-none mb-1">{userName}</p>
+                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
                     {userId ? `ID: ${userId.toUpperCase()}` : userRole}
                   </p>
                 </div>
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center ring-2 ring-white/10 shadow-lg shadow-indigo-500/20">
-                  <span className="text-white font-bold text-sm">{userName.charAt(0)}</span>
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-slate-800 flex items-center justify-center border-4 border-slate-50 shadow-lg group-hover:scale-105 transition-all">
+                  <span className="text-white font-black text-base uppercase leading-none">{userName.charAt(0)}</span>
                 </div>
               </button>
 
@@ -285,24 +263,19 @@ const DashboardLayout = ({
                       onClick={() => setDropdownOpen(false)}
                     />
                     <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      initial={{ opacity: 0, y: 15, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute right-0 mt-3 w-48 bg-[#0c1021] border border-white/[0.08] rounded-xl shadow-2xl z-50 py-2 overflow-hidden"
+                      exit={{ opacity: 0, y: 15, scale: 0.95 }}
+                      className="absolute right-0 mt-5 w-60 bg-white border border-slate-100 rounded-[1.75rem] shadow-[0_20px_60px_rgba(0,0,0,0.1)] z-50 py-3 overflow-hidden p-2"
                     >
-                      <div className="px-4 py-2 border-b border-white/[0.04] mb-1 sm:hidden">
-                        <p className="text-white text-sm font-medium truncate">{userName}</p>
-                        <p className="text-slate-500 text-[10px] truncate">{userId ? `ID: ${userId.toUpperCase()}` : userRole}</p>
-                      </div>
-
                       <button
                         onClick={() => {
                           onViewChange('profile');
                           setDropdownOpen(false);
                         }}
-                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-300 hover:bg-white/[0.04] hover:text-white transition-colors text-left"
+                        className="w-full flex items-center gap-3 px-5 py-3.5 text-sm font-bold text-slate-600 hover:bg-primary/5 hover:text-primary rounded-2xl transition-all text-left"
                       >
-                        <HelpCircle className="w-4 h-4" /> My Profile
+                        <HelpCircle className="w-5 h-5" /> Account Details
                       </button>
 
                       <button
@@ -310,9 +283,9 @@ const DashboardLayout = ({
                           setDropdownOpen(false);
                           setShowLogoutModal(true);
                         }}
-                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/5 transition-colors text-left"
+                        className="w-full flex items-center gap-3 px-5 py-3.5 text-sm font-bold text-red-500 hover:bg-red-50 rounded-2xl transition-all text-left"
                       >
-                        <LogOut className="w-4 h-4" /> Logout
+                        <LogOut className="w-5 h-5" /> End Session
                       </button>
                     </motion.div>
                   </>
@@ -322,8 +295,8 @@ const DashboardLayout = ({
           </div>
         </header>
 
-        {/* Content */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+        {/* Content Area with extra cushioning */}
+        <main className="flex-1 overflow-y-auto p-6 md:p-10 lg:p-12">
           {children}
         </main>
       </div>

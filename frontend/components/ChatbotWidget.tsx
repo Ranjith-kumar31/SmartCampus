@@ -223,9 +223,18 @@ export default function ChatbotWidget() {
     setLoading(true);
 
     try {
+      // Send last 6 messages as history for context
+      const history = messages.slice(-6).map(m => ({
+        role: m.role,
+        content: m.content,
+        type: m.type,
+        events: m.events
+      }));
+
       const { data } = await axios.post(`${API_BASE}/api/chatbot/message`, { 
         message: trimmed,
-        department: department
+        department: department,
+        history: history
       }, { timeout: 20000 });
 
       const botMsg: Message = {

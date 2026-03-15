@@ -12,6 +12,7 @@ import ClubDashboard from './pages/ClubDashboard';
 import HODdashboard from './pages/HODdashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import EventDetailsPage from './pages/EventDetailsPage';
+import EventsPage from './pages/EventsPage';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
         {/* Public routes with MainLayout */}
         <Route path="/" element={<MainLayout />}>
           <Route index element={<LandingPage />} />
+          <Route path="explore" element={<EventsPage />} />
           <Route path="auth/:type" element={<AuthPage />} />
           <Route path="events/:id" element={<EventDetailsPage />} />
         </Route>

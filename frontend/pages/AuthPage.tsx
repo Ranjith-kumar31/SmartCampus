@@ -31,7 +31,7 @@ const AuthPage = () => {
     }
   };
 
-  const { title, icon: Icon, color, glow } = getPortalDetails();
+  const { title, icon: Icon } = getPortalDetails();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,43 +105,42 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[80vh] px-4 py-12">
+    <div className="flex items-center justify-center min-h-[85vh] px-4 py-20 bg-slate-50">
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md dashboard-card p-8 md:p-10 relative overflow-hidden"
+        className="w-full max-w-lg bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-slate-100 p-10 md:p-14 relative overflow-hidden"
       >
-        {/* Glow effect */}
-        <div className={`absolute -top-32 -right-32 w-64 h-64 ${glow}/15 blur-[100px] rounded-full`} />
-
-        <div className="flex flex-col items-center mb-8 relative z-10">
-          <div className="bg-white/[0.04] p-4 rounded-2xl mb-4 shadow-lg border border-white/[0.06]">
-            <Icon className={`w-8 h-8 ${color}`} />
+        <div className="flex flex-col items-center mb-12 relative z-10">
+          <div className="bg-primary/5 p-5 rounded-3xl mb-6 border border-primary/10">
+            <Icon className={`w-10 h-10 text-primary`} />
           </div>
-          <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 mb-2">
-            {isLogin ? 'Welcome Back' : 'Create Account'}
+          <h2 className="text-4xl font-extrabold text-primary mb-3">
+            {isLogin ? 'Welcome Back' : 'Get Started'}
           </h2>
-          <p className="text-slate-500">{title}</p>
+          <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-secondary/10 border border-secondary/20 self-center">
+            <span className="text-secondary font-bold text-xs uppercase tracking-wider">{title}</span>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
+        <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
           <AnimatePresence mode="wait">
             {!isLogin && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-5 overflow-hidden">
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-6 overflow-hidden">
                 <div>
                   <label className="form-label">{type === 'club' ? 'Club Name' : 'Full Name'}</label>
                   <div className="relative">
-                    <input type="text" className="input-field pl-11" placeholder={type === 'club' ? 'e.g., CodingX' : 'John Doe'} value={name} onChange={(e) => setName(e.target.value)} required={!isLogin} />
-                    <UserCog className="w-5 h-5 text-slate-500 absolute left-4 top-3.5" />
+                    <input type="text" className="input-field pl-14" placeholder={type === 'club' ? 'e.g., CodingX' : 'John Doe'} value={name} onChange={(e) => setName(e.target.value)} required={!isLogin} />
+                    <UserCog className="w-6 h-6 text-slate-400 absolute left-5 top-4" />
                   </div>
                 </div>
                 {type === 'student' && (
                   <div>
                     <label className="form-label">Roll Number</label>
                     <div className="relative">
-                      <input type="text" className="input-field pl-11" placeholder="211620104___" value={rollNumber} onChange={(e) => setRollNumber(e.target.value)} required={!isLogin && type === 'student'} />
-                      <Hash className="w-5 h-5 text-slate-500 absolute left-4 top-3.5" />
+                      <input type="text" className="input-field pl-14" placeholder="211620104___" value={rollNumber} onChange={(e) => setRollNumber(e.target.value)} required={!isLogin && type === 'student'} />
+                      <Hash className="w-6 h-6 text-slate-400 absolute left-5 top-4" />
                     </div>
                   </div>
                 )}
@@ -149,15 +148,15 @@ const AuthPage = () => {
                   <div>
                     <label className="form-label">Coordinator Name</label>
                     <div className="relative">
-                      <input type="text" className="input-field pl-11" placeholder="Prof. Smith" value={coordinator} onChange={(e) => setCoordinator(e.target.value)} required={!isLogin && type === 'club'} />
-                      <UserCog className="w-5 h-5 text-slate-500 absolute left-4 top-3.5" />
+                      <input type="text" className="input-field pl-14" placeholder="Prof. Smith" value={coordinator} onChange={(e) => setCoordinator(e.target.value)} required={!isLogin && type === 'club'} />
+                      <UserCog className="w-6 h-6 text-slate-400 absolute left-5 top-4" />
                     </div>
                   </div>
                 )}
                 {type === 'club' && (
                   <div>
-                    <label className="form-label">Submit Proof Document <span className="text-slate-500 font-normal">(PDF / JPG / PNG — Max 5MB)</span></label>
-                    <label className={`flex flex-col items-center gap-2 w-full border-2 border-dashed rounded-xl px-4 py-5 cursor-pointer transition-colors ${proofFile ? 'border-violet-500/60 bg-violet-500/5' : 'border-white/10 bg-white/[0.02] hover:border-violet-500/40 hover:bg-violet-500/5'}`}>
+                    <label className="form-label text-slate-700">Submit Proof Document</label>
+                    <label className={`flex flex-col items-center gap-2 w-full border-2 border-dashed rounded-[1.5rem] px-6 py-6 cursor-pointer transition-all ${proofFile ? 'border-primary bg-primary/5' : 'border-slate-200 bg-slate-50 hover:border-primary/50 hover:bg-white'}`}>
                       <input
                         type="file"
                         accept=".pdf,.jpg,.jpeg,.png"
@@ -172,18 +171,18 @@ const AuthPage = () => {
                         }}
                       />
                       {proofFile ? (
-                        <div className="flex items-center gap-3 text-violet-400">
-                          <FileText className="w-6 h-6 shrink-0" />
+                        <div className="flex items-center gap-4 text-primary">
+                          <FileText className="w-8 h-8 shrink-0" />
                           <div className="text-left">
-                            <p className="text-sm font-medium text-white truncate max-w-[220px]">{proofFile.name}</p>
-                            <p className="text-xs text-slate-400">{(proofFile.size / 1024).toFixed(1)} KB — Click to change</p>
+                            <p className="text-sm font-bold truncate max-w-[200px]">{proofFile.name}</p>
+                            <p className="text-xs text-slate-500">{(proofFile.size / 1024).toFixed(1)} KB — Tap to change</p>
                           </div>
                         </div>
                       ) : (
-                        <div className="flex flex-col items-center gap-1 text-slate-400">
-                          <Upload className="w-7 h-7 mb-1" />
-                          <p className="text-sm font-medium text-white">Click to upload proof</p>
-                          <p className="text-xs">Faculty letter, approval letter, or registration doc</p>
+                        <div className="flex flex-col items-center gap-2 text-slate-400">
+                          <Upload className="w-8 h-8 text-primary/40" />
+                          <p className="text-sm font-bold text-slate-600">Click to upload proof</p>
+                          <p className="text-xs text-center">Faculty letter, approval letter, or registration docs</p>
                         </div>
                       )}
                     </label>
@@ -193,14 +192,14 @@ const AuthPage = () => {
                   <div>
                     <label className="form-label">Department / Domain</label>
                     <div className="relative">
-                      <select className="input-field pl-11 appearance-none" value={department} onChange={(e) => setDepartment(e.target.value)} required={!isLogin}>
-                        <option value="" disabled className="bg-[#0c1021]">Select Department</option>
+                      <select className="input-field pl-14 appearance-none" value={department} onChange={(e) => setDepartment(e.target.value)} required={!isLogin}>
+                        <option value="" disabled className="bg-white">Select Department</option>
                         {['CSE', 'IT', 'ECE', 'EEE', 'MECH', 'CIVIL', 'AIML'].map(d => (
-                          <option key={d} value={d} className="bg-[#0c1021]">{d}</option>
+                          <option key={d} value={d} className="bg-white">{d}</option>
                         ))}
-                        {type === 'club' && <option value="General" className="bg-[#0c1021]">General (All branches)</option>}
+                        {type === 'club' && <option value="General" className="bg-white">General (All branches)</option>}
                       </select>
-                      <Building2 className="w-5 h-5 text-slate-500 absolute left-4 top-3.5" />
+                      <Building2 className="w-6 h-6 text-slate-400 absolute left-5 top-4" />
                     </div>
                   </div>
                 )}
@@ -211,8 +210,8 @@ const AuthPage = () => {
           <div>
             <label className="form-label">Email Address</label>
             <div className="relative">
-              <input type="email" className="input-field pl-11" placeholder="user@rajalakshmi.edu.in" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              <Mail className="w-5 h-5 text-slate-500 absolute left-4 top-3.5" />
+              <input type="email" className="input-field pl-14" placeholder="user@rajalakshmi.edu.in" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <Mail className="w-6 h-6 text-slate-400 absolute left-5 top-4" />
             </div>
           </div>
 
@@ -221,16 +220,16 @@ const AuthPage = () => {
             <div className="relative">
               <input 
                 type={showPassword ? "text" : "password"} 
-                className="input-field pl-11 pr-11" 
+                className="input-field pl-14 pr-14" 
                 placeholder="••••••••" 
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)} 
                 required 
               />
-              <Lock className="w-5 h-5 text-slate-500 absolute left-4 top-3.5" />
+              <Lock className="w-6 h-6 text-slate-400 absolute left-5 top-4" />
               <button
                 type="button"
-                className="absolute right-4 top-3.5 text-slate-500 hover:text-slate-300 transition-colors"
+                className="absolute right-5 top-4 text-slate-400 hover:text-primary transition-colors"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -238,21 +237,21 @@ const AuthPage = () => {
             </div>
           </div>
 
-          <button type="submit" className="w-full btn-primary py-3 flex text-lg justify-center items-center gap-2 mt-4" disabled={isLoading}>
+          <button type="submit" className="w-full bg-primary hover:bg-primary/95 text-white font-bold py-4 rounded-2xl flex text-lg justify-center items-center gap-3 mt-4 transition-all shadow-xl shadow-primary/20 active:scale-95 disabled:opacity-70" disabled={isLoading}>
             {isLoading ? (
               <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
             ) : (
-              <>{isLogin ? 'Sign In' : 'Sign Up'} <ArrowRight className="w-5 h-5" /></>
+              <>{isLogin ? 'Sign In' : 'Create Account'} <ArrowRight className="w-5 h-5" /></>
             )}
           </button>
         </form>
 
         {(type === 'student' || type === 'club') && (
-          <div className="mt-8 text-center relative z-10">
-            <p className="text-slate-500">
+          <div className="mt-10 text-center relative z-10">
+            <p className="text-slate-500 font-medium">
               {isLogin ? "Don't have an account?" : "Already have an account?"}
-              <button type="button" onClick={() => setIsLogin(!isLogin)} className={`ml-2 font-medium ${color} hover:underline`}>
-                {isLogin ? 'Sign Up' : 'Sign In'}
+              <button type="button" onClick={() => setIsLogin(!isLogin)} className={`ml-2 font-bold text-secondary hover:underline`}>
+                {isLogin ? 'Register now' : 'Sign in here'}
               </button>
             </p>
           </div>

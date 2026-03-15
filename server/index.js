@@ -42,26 +42,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 
-// Direct chat endpoint
-app.post("/api/chat", async (req, res) => {
-  const message = req.body.message;
-
-  if (!message || typeof message !== 'string' || message.trim().length === 0) {
-    return res.status(400).json({ error: 'Message is required' });
-  }
-
-  try {
-    const response = await chatbotRoutes.generateResponse(message.trim());
-    res.json(response);
-  } catch (error) {
-    console.error('Chat error:', error);
-    res.status(500).json({
-      type: 'text',
-      message: "⚠️ Oops! I ran into an issue. Please try again in a moment.",
-      intent: 'error'
-    });
-  }
-});
+app.use('/api/chatbot', chatbotRoutes);
 
 // EmailJS Test Route
 const { sendEmail } = require('./utils/email');

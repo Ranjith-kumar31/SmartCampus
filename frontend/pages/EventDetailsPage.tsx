@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronLeft, Share2, CheckCircle2, CalendarDays, MapPin, UserCheck, Clock, Users, IndianRupee, Tag, Loader2, AlertCircle } from 'lucide-react';
+import { ChevronLeft, Share2, CheckCircle2, CalendarDays, MapPin, UserCheck, Clock, IndianRupee, Tag, Loader2, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
@@ -13,13 +13,13 @@ api.interceptors.request.use((config) => {
 });
 
 const categoryColors: Record<string, string> = {
-  'AI & ML': 'bg-indigo-600/20 text-indigo-400 border-indigo-500/20',
-  'Web Development': 'bg-cyan-600/20 text-cyan-400 border-cyan-500/20',
-  'Cybersecurity': 'bg-red-600/20 text-red-400 border-red-500/20',
-  'Robotics': 'bg-amber-600/20 text-amber-400 border-amber-500/20',
-  'Cultural': 'bg-pink-600/20 text-pink-400 border-pink-500/20',
-  'Sports': 'bg-emerald-600/20 text-emerald-400 border-emerald-500/20',
-  'Hackathon': 'bg-violet-600/20 text-violet-400 border-violet-500/20',
+  'AI & ML': 'bg-primary/5 text-primary border-primary/10',
+  'Web Development': 'bg-secondary/5 text-secondary border-secondary/10',
+  'Cybersecurity': 'bg-red-50 text-red-600 border-red-100',
+  'Robotics': 'bg-amber-50 text-amber-600 border-amber-100',
+  'Cultural': 'bg-pink-50 text-pink-600 border-pink-100',
+  'Sports': 'bg-emerald-50 text-emerald-600 border-emerald-100',
+  'Hackathon': 'bg-secondary/5 text-secondary border-secondary/10',
 };
 
 const EventDetailsPage = () => {
@@ -47,7 +47,6 @@ const EventDetailsPage = () => {
   const fetchEvent = async () => {
     try {
       setLoading(true);
-      // Try fetching by ID from approved events list
       const res = await api.get(`/events`);
       const found = res.data.find((e: any) => e.id === id || e._id === id);
       if (!found) {
@@ -71,7 +70,11 @@ const EventDetailsPage = () => {
   };
 
   const openRegModal = () => {
-    if (!user) { toast.error('Please log in to register for events'); return; }
+    if (!user) { 
+      toast.error('Identity protocol required. Please sign in to register.'); 
+      navigate('/auth/student');
+      return; 
+    }
     setRegForm({ phone: '', year: '', branch: user.department || '' });
     setShowRegModal(true);
   };
@@ -111,265 +114,294 @@ const EventDetailsPage = () => {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-[#080b14] flex items-center justify-center">
-      <div className="text-center space-y-3">
-        <Loader2 className="w-8 h-8 text-indigo-400 animate-spin mx-auto" />
-        <p className="text-slate-500">Loading event details...</p>
+    <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="text-center space-y-4">
+        <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
+        <p className="text-slate-500 font-medium">Loading event details...</p>
       </div>
     </div>
   );
 
   if (error || !event) return (
-    <div className="min-h-screen bg-[#080b14] flex items-center justify-center px-6">
-      <div className="text-center space-y-4">
-        <AlertCircle className="w-12 h-12 text-red-400 mx-auto" />
-        <p className="text-white font-bold text-lg">{error || 'Event not found'}</p>
-        <button onClick={() => navigate(-1)} className="text-indigo-400 hover:underline text-sm">Go back</button>
+    <div className="min-h-screen bg-white flex items-center justify-center px-6">
+      <div className="text-center space-y-6">
+        <div className="w-20 h-20 bg-red-50 rounded-[2rem] flex items-center justify-center mx-auto">
+          <AlertCircle className="w-10 h-10 text-red-500" />
+        </div>
+        <p className="text-primary font-black text-2xl tracking-tight">{error || 'Event not found'}</p>
+        <button onClick={() => navigate(-1)} className="px-8 py-3 bg-primary text-white font-bold rounded-2xl shadow-lg hover:bg-primary/95 transition-all">
+          Go back to Events
+        </button>
       </div>
     </div>
   );
 
-  const domainClass = categoryColors[event.domain] || 'bg-slate-600/20 text-slate-400 border-slate-500/20';
+  const domainClass = categoryColors[event.domain] || 'bg-slate-50 text-slate-500 border-slate-100';
   const rules = Array.isArray(event.rules) ? event.rules : [];
   const prizes = Array.isArray(event.prizes) ? event.prizes : [];
 
   return (
-    <div className="min-h-screen bg-[#080b14] text-slate-200 pb-28 font-sans">
+    <div className="min-h-screen bg-slate-50 text-slate-800 pb-32 font-sans">
 
       {/* Top Nav */}
-      <div className="sticky top-0 z-50 bg-[#080b14]/90 backdrop-blur-xl border-b border-white/[0.04] px-4 py-4 flex items-center justify-between">
-        <button onClick={() => navigate(-1)} className="p-2 hover:bg-white/[0.06] rounded-full transition-colors">
-          <ChevronLeft className="w-6 h-6 text-white" />
+      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100 px-6 py-5 flex items-center justify-between">
+        <button onClick={() => navigate(-1)} className="p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl transition-all border border-slate-200">
+          <ChevronLeft className="w-6 h-6 text-primary" />
         </button>
-        <h1 className="text-base font-bold text-white truncate max-w-[60%]">{event.title}</h1>
-        <button onClick={handleShare} className="p-2 hover:bg-white/[0.06] rounded-full transition-colors">
-          <Share2 className="w-5 h-5 text-white" />
+        <h1 className="text-lg font-black text-primary truncate max-w-[60%] tracking-tight">Event Details</h1>
+        <button onClick={handleShare} className="p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl transition-all border border-slate-200">
+          <Share2 className="w-5 h-5 text-primary" />
         </button>
       </div>
 
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-4xl mx-auto px-6 pt-10">
 
-        {/* Hero Banner */}
-        <div className="w-full h-56 md:h-72 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/50 via-violet-900/30 to-[#080b14]" />
-          <div className="absolute inset-0 opacity-20 mix-blend-screen"
-            style={{ backgroundImage: 'radial-gradient(circle at 30% 50%, rgba(99,102,241,0.6), transparent 60%), radial-gradient(circle at 80% 50%, rgba(139,92,246,0.4), transparent 60%)' }} />
-          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#080b14] to-transparent z-10" />
-          <div className="absolute inset-0 flex items-center justify-center z-5">
-            <span className="text-8xl md:text-9xl font-black text-white/[0.03] uppercase tracking-tighter select-none">
-              {event.domain || 'EVENT'}
-            </span>
+        {/* Hero Section */}
+        <div className="relative mb-12">
+          <div className="w-full h-64 md:h-80 rounded-[3rem] overflow-hidden relative shadow-2xl shadow-primary/10">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary to-slate-800" />
+            <img
+              src={`https://source.unsplash.com/random/1200x800/?technology,event&sig=${event._id}`}
+              alt={event.title}
+              className="w-full h-full object-cover opacity-60 mix-blend-overlay"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent" />
+            <div className="absolute bottom-8 left-8 right-8">
+              <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border mb-4 shadow-xl ${domainClass}`}>
+                <Tag className="w-3 h-3" /> {event.domain || 'Event'}
+              </span>
+              <h2 className="text-3xl md:text-5xl font-black text-white mb-2 leading-[1.1] tracking-tighter">{event.title}</h2>
+              {event.club?.name && (
+                <p className="text-white/80 font-bold tracking-tight">Host: {event.club.name}</p>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="px-5 md:px-8 -mt-6 relative z-20 space-y-6">
-
-          {/* Header */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border mb-3 ${domainClass}`}>
-              <Tag className="w-3 h-3" /> {event.domain || 'Event'}
-            </span>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-3 leading-tight">{event.title}</h2>
-            <p className="text-slate-400 text-sm md:text-base leading-relaxed">{event.description || 'No description provided.'}</p>
-
-            {/* Organized by */}
-            {event.club?.name && (
-              <div className="mt-3 flex items-center gap-2">
-                <span className="text-slate-500 text-xs">Organized by</span>
-                <span className="text-indigo-400 text-xs font-bold">{event.club.name}</span>
-              </div>
-            )}
-          </motion.div>
-
-          {/* Quick Stats Row */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-            className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
-              { icon: CalendarDays, label: 'Date', value: event.date || 'TBD', color: 'text-indigo-400' },
-              { icon: Clock, label: 'Time', value: event.time || 'TBD', color: 'text-violet-400' },
-              { icon: MapPin, label: 'Venue', value: event.location || 'TBD', color: 'text-emerald-400' },
-              { icon: IndianRupee, label: 'Entry Fee', value: (!event.regFee || event.regFee === 0) ? 'Free' : `₹${event.regFee}`, color: (!event.regFee || event.regFee === 0) ? 'text-emerald-400' : 'text-amber-400' },
-            ].map(({ icon: Icon, label, value, color }) => (
-              <div key={label} className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 md:p-4">
-                <Icon className={`w-4 h-4 ${color} mb-1.5`} />
-                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">{label}</p>
-                <p className="text-white text-xs font-semibold truncate">{value}</p>
-              </div>
-            ))}
-          </motion.div>
-
-          {/* Expected Audience */}
-          {event.expectedAudience && (
-            <div className="flex items-center gap-3 bg-white/[0.02] border border-white/[0.05] rounded-xl p-4">
-              <Users className="w-5 h-5 text-indigo-400 shrink-0" />
-              <div>
-                <p className="text-[11px] text-slate-500 uppercase tracking-wider font-bold">Expected Audience</p>
-                <p className="text-white font-semibold">{event.expectedAudience} participants</p>
-              </div>
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+          
+          <div className="lg:col-span-2 space-y-10">
+            {/* Description */}
+            <div className="space-y-4">
+              <h3 className="text-xl font-black text-primary flex items-center gap-2">
+                <div className="w-2 h-8 bg-secondary rounded-full" />
+                About the Event
+              </h3>
+              <p className="text-slate-500 text-base md:text-lg leading-relaxed font-medium">
+                {event.description || 'No description provided.'}
+              </p>
             </div>
-          )}
 
-          {/* Rules */}
-          {rules.length > 0 && (
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-              className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-5 md:p-6 space-y-4">
-              <h3 className="text-white font-bold flex items-center gap-2">
-                <span className="text-indigo-400">⚖️</span> Rules & Guidelines
-              </h3>
-              <ul className="space-y-3">
-                {rules.map((rule: string, idx: number) => (
-                  <li key={idx} className="flex gap-3 text-sm text-slate-300">
-                    <CheckCircle2 className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
-                    <span className="leading-snug">{rule}</span>
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-          )}
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { icon: CalendarDays, label: 'Date', value: event.date || 'TBD', color: 'text-primary', bg: 'bg-primary/5' },
+                { icon: Clock, label: 'Time', value: event.time || 'TBD', color: 'text-secondary', bg: 'bg-secondary/5' },
+                { icon: MapPin, label: 'Venue', value: event.location || 'TBD', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                { icon: IndianRupee, label: 'Entry Fee', value: (!event.regFee || event.regFee === 0) ? 'Free' : `₹${event.regFee}`, color: 'text-amber-600', bg: 'bg-amber-50' },
+              ].map(({ icon: Icon, label, value, color, bg }) => (
+                <div key={label} className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-all group">
+                  <div className={`w-12 h-12 ${bg} rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110`}>
+                    <Icon className={`w-6 h-6 ${color}`} />
+                  </div>
+                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mb-1">{label}</p>
+                  <p className="text-primary font-black text-lg truncate tracking-tight">{value}</p>
+                </div>
+              ))}
+            </div>
 
-          {/* Prizes */}
-          {prizes.length > 0 && (
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-              className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-5 md:p-6">
-              <h3 className="text-white font-bold flex items-center gap-2 mb-5">
-                <span className="text-emerald-400">🏆</span> Prizes & Rewards
-              </h3>
-              <div className="space-y-3">
-                {prizes.map((prize: any, idx: number) => (
-                  <div key={idx} className="bg-white/[0.03] border border-white/[0.04] rounded-xl p-3 md:p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg ${idx === 0 ? 'bg-amber-500' : idx === 1 ? 'bg-slate-500' : 'bg-orange-700'}`}>
+            {/* Rules */}
+            {rules.length > 0 && (
+              <div className="bg-white border border-slate-100 rounded-[3rem] p-8 md:p-10 shadow-sm">
+                <h3 className="text-2xl font-black text-primary mb-8 flex items-center gap-3">
+                  <span className="p-3 bg-secondary/10 rounded-2xl text-secondary">⚖️</span>
+                  Guidelines
+                </h3>
+                <ul className="space-y-6">
+                  {rules.map((rule: string, idx: number) => (
+                    <li key={idx} className="flex gap-4 items-start group">
+                      <div className="w-6 h-6 bg-primary/5 border border-primary/10 rounded-md flex items-center justify-center shrink-0 mt-1 font-black text-[10px] text-primary">
                         {idx + 1}
                       </div>
-                      <div>
-                        <p className={`font-bold text-sm ${idx === 0 ? 'text-amber-400' : 'text-white'}`}>
-                          {prize.title || `${idx + 1}${idx === 0 ? 'st' : idx === 1 ? 'nd' : 'rd'} Prize`}
-                        </p>
-                        {prize.description && <p className="text-slate-500 text-xs">{prize.description}</p>}
+                      <span className="text-slate-600 font-bold leading-relaxed">{rule}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          <div className="lg:col-span-1 space-y-8">
+            {/* Prizes Sidebar */}
+            {prizes.length > 0 && (
+              <div className="bg-primary rounded-[3rem] p-8 text-white shadow-2xl shadow-primary/20">
+                <h3 className="text-xl font-black mb-6 flex items-center gap-3">
+                  <span className="p-2 bg-white/10 rounded-xl text-yellow-400">🏆</span>
+                  Prize Pool
+                </h3>
+                <div className="space-y-4">
+                  {prizes.map((prize: any, idx: number) => (
+                    <div key={idx} className="bg-white/10 backdrop-blur-md rounded-2xl p-4 flex items-center justify-between border border-white/10 group hover:bg-white/20 transition-all">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-sm ${idx === 0 ? 'bg-yellow-400 text-primary' : idx === 1 ? 'bg-slate-300 text-primary' : 'bg-orange-400 text-primary'}`}>
+                          {idx + 1}
+                        </div>
+                        <div>
+                          <p className="font-black text-sm tracking-tight">{prize.title || (idx === 0 ? 'First' : idx === 1 ? 'Second' : 'Third')}</p>
+                          {prize.amount && <p className="text-white font-black text-lg leading-none">₹{prize.amount}</p>}
+                        </div>
                       </div>
                     </div>
-                    {prize.amount && <span className="text-white font-bold">₹{prize.amount}</span>}
-                  </div>
-                ))}
-                <div className="pt-3 mt-1 border-t border-white/[0.04] text-xs text-slate-500">
-                  🏅 Participation certificates for all registered attendees.
+                  ))}
                 </div>
               </div>
-            </motion.div>
-          )}
+            )}
 
-          {/* Club Coordinator Info */}
-          {event.club?.coordinator && (
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-              className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-5">
-              <h3 className="text-white font-bold mb-4">📋 Organizer Details</h3>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-bold text-lg shrink-0">
-                  {event.club.coordinator.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <p className="text-white font-semibold">{event.club.coordinator}</p>
-                  <p className="text-slate-500 text-sm">{event.club.name}</p>
-                  {event.club.email && <p className="text-indigo-400 text-xs mt-0.5">{event.club.email}</p>}
+            {/* Organizer Card */}
+            {event.club?.coordinator && (
+              <div className="bg-white border border-slate-100 rounded-[2rem] p-8 shadow-sm">
+                <h3 className="text-slate-400 font-black text-[10px] uppercase tracking-widest mb-6">Organizer</h3>
+                <div className="flex items-center gap-5">
+                  <div className="w-16 h-16 rounded-[1.5rem] bg-gradient-to-br from-primary to-slate-800 flex items-center justify-center text-white font-black text-2xl shadow-lg">
+                    {event.club.coordinator.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-primary font-black text-lg tracking-tight leading-none mb-1">{event.club.coordinator}</p>
+                    <p className="text-slate-500 text-xs font-bold">{event.club.name}</p>
+                    {event.club.email && <p className="text-secondary text-xs mt-2 font-black underline">{event.club.email}</p>}
+                  </div>
                 </div>
               </div>
-            </motion.div>
-          )}
+            )}
+          </div>
 
         </div>
       </div>
 
-      {/* Sticky Bottom Register Bar */}
-      <div className="fixed bottom-0 left-0 w-full p-4 md:p-6 bg-[#080b14]/95 backdrop-blur-xl border-t border-white/[0.06] z-50 flex justify-center">
-        {user?.role === 'student' || !user ? (
-          isRegistered ? (
-            <div className="w-full max-w-sm bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold py-4 rounded-xl flex items-center justify-center gap-2">
-              <CheckCircle2 className="w-5 h-5" /> You're Registered!
-            </div>
+      {/* Sticky Bottom Bar */}
+      <div className="fixed bottom-0 left-0 w-full p-6 bg-white/80 backdrop-blur-2xl border-t border-slate-100 z-50 flex justify-center shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+        <div className="w-full max-w-4xl flex items-center justify-between gap-6">
+          <div className="hidden md:block">
+            <p className="text-primary font-black text-xl leading-none">Registration Status</p>
+            <p className="text-slate-400 text-xs font-bold mt-1">Hurry up! Limited slots available.</p>
+          </div>
+          
+          {user?.role === 'student' || !user ? (
+            isRegistered ? (
+              <div className="w-full md:w-auto md:min-w-[300px] bg-emerald-50 text-emerald-600 font-black py-5 rounded-[1.5rem] flex items-center justify-center gap-3 border border-emerald-100">
+                <CheckCircle2 className="w-6 h-6" /> You are on the list!
+              </div>
+            ) : (
+              <button
+                onClick={openRegModal}
+                disabled={registering}
+                className="w-full md:w-auto md:min-w-[300px] bg-primary hover:bg-primary/95 disabled:opacity-50 active:scale-95 text-white font-black py-5 rounded-[1.5rem] transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3"
+              >
+                {registering ? <Loader2 className="w-6 h-6 animate-spin" /> : <UserCheck className="w-6 h-6" />}
+                {registering ? 'Processing...' : 'Reserve my Spot'}
+              </button>
+            )
           ) : (
-            <button
-              onClick={openRegModal}
-              disabled={registering}
-              className="w-full max-w-sm bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 active:scale-95 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2"
-            >
-              {registering ? <Loader2 className="w-5 h-5 animate-spin" /> : <UserCheck className="w-5 h-5" />}
-              {registering ? 'Registering...' : 'Register Now'}
-            </button>
-          )
-        ) : (
-          <div className="text-slate-500 text-sm">Registration is for students only.</div>
-        )}
+            <div className="bg-slate-50 px-8 py-5 rounded-2xl text-slate-500 font-bold border border-slate-100">
+              Only students can register for events.
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Registration Modal */}
+      {/* Modern Registration Modal */}
       {showRegModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-primary/20 backdrop-blur-md"
           onClick={() => setShowRegModal(false)}>
-          <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-            className="bg-[#0c1021] border border-white/[0.08] rounded-2xl w-full max-w-md p-6 relative shadow-2xl"
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0, y: 20 }} 
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            className="bg-white border border-slate-100 rounded-[3rem] w-full max-w-lg p-10 relative shadow-2xl"
             onClick={e => e.stopPropagation()}>
-            <button onClick={() => setShowRegModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white">✕</button>
+            <button onClick={() => setShowRegModal(false)} className="absolute top-8 right-8 p-2 bg-slate-50 rounded-xl text-slate-400 hover:text-primary transition-colors">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
 
-            <div className="mb-5">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 mb-1 block">Event Registration</span>
-              <h3 className="text-lg font-bold text-white">{event.title}</h3>
-              <p className="text-slate-500 text-xs mt-1">{event.date} · {event.location}</p>
-            </div>
-
-            {/* Auto-filled student info */}
-            <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 mb-5">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-3">Your Details (auto-filled)</p>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><p className="text-slate-500 text-[10px] uppercase">Name</p><p className="text-white font-medium">{user?.name}</p></div>
-                <div><p className="text-slate-500 text-[10px] uppercase">Roll No</p><p className="text-white font-medium">{user?.rollNumber || 'N/A'}</p></div>
-                <div><p className="text-slate-500 text-[10px] uppercase">Department</p><p className="text-white font-medium">{user?.department}</p></div>
-                <div><p className="text-slate-500 text-[10px] uppercase">Email</p><p className="text-white font-medium text-xs truncate">{user?.email}</p></div>
+            <div className="mb-10 pt-2">
+              <span className="text-secondary font-black text-xs uppercase tracking-widest mb-2 block">Application Form</span>
+              <h3 className="text-3xl font-black text-primary leading-tight tracking-tighter">{event.title}</h3>
+              <div className="flex items-center gap-4 mt-3">
+                <span className="text-slate-400 text-sm font-bold flex items-center gap-1.5"><CalendarDays className="w-4 h-4" /> {event.date}</span>
+                <span className="text-slate-400 text-sm font-bold flex items-center gap-1.5"><MapPin className="w-4 h-4" /> {event.location}</span>
               </div>
             </div>
 
-            <div className="space-y-4">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Additional Details Required</p>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
-                  Phone Number <span className="text-red-400">*</span>
-                </label>
-                <input type="tel" className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-indigo-500/50 placeholder-slate-600"
-                  placeholder="e.g. 9876543210"
-                  value={regForm.phone} onChange={e => setRegForm(p => ({ ...p, phone: e.target.value }))} />
+            <div className="space-y-8">
+              {/* Profile Context */}
+              <div className="bg-slate-50 rounded-[2rem] p-6 border border-slate-100 grid grid-cols-2 gap-y-4 gap-x-6">
+                 <div>
+                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Student Name</p>
+                   <p className="text-primary font-black text-sm tracking-tight">{user?.name}</p>
+                 </div>
+                 <div>
+                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Roll Number</p>
+                   <p className="text-primary font-black text-sm tracking-tight">{user?.rollNumber || 'N/A'}</p>
+                 </div>
+                 <div className="col-span-2">
+                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Email Address</p>
+                   <p className="text-primary font-black text-sm tracking-tight truncate">{user?.email}</p>
+                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-6">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
-                    Year of Study <span className="text-red-400">*</span>
-                  </label>
-                  <select className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-indigo-500/50"
-                    value={regForm.year} onChange={e => setRegForm(p => ({ ...p, year: e.target.value }))}>
-                    <option value="" className="bg-[#0c1021]">Select Year</option>
-                    {['1st Year', '2nd Year', '3rd Year', '4th Year'].map(y => (
-                      <option key={y} value={y} className="bg-[#0c1021]">{y}</option>
-                    ))}
-                  </select>
+                  <label className="text-xs font-black text-primary uppercase tracking-widest mb-3 block">Primary Phone Number</label>
+                  <input 
+                    type="tel" 
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-primary font-black text-sm focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all placeholder:text-slate-300"
+                    placeholder="e.g. 9876543210"
+                    value={regForm.phone} 
+                    onChange={e => setRegForm(p => ({ ...p, phone: e.target.value }))} 
+                  />
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">Branch / Section</label>
-                  <input className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-indigo-500/50 placeholder-slate-600"
-                    placeholder="e.g. CSE-A"
-                    value={regForm.branch} onChange={e => setRegForm(p => ({ ...p, branch: e.target.value }))} />
-                </div>
-              </div>
 
-              <div className="flex gap-3 pt-2">
-                <button onClick={() => setShowRegModal(false)} className="flex-1 py-3 text-slate-400 hover:text-white text-sm font-medium border border-white/[0.06] rounded-xl transition-colors">
-                  Cancel
-                </button>
-                <button onClick={submitRegistration} disabled={registering}
-                  className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2">
-                  {registering ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                  Confirm Registration
-                </button>
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="text-xs font-black text-primary uppercase tracking-widest mb-3 block">Year of Study</label>
+                    <select 
+                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-primary font-black text-sm focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all appearance-none cursor-pointer"
+                      value={regForm.year} 
+                      onChange={e => setRegForm(p => ({ ...p, year: e.target.value }))}
+                    >
+                      <option value="">Select Year</option>
+                      {['1st Year', '2nd Year', '3rd Year', '4th Year'].map(y => (
+                        <option key={y} value={y}>{y}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-black text-primary uppercase tracking-widest mb-3 block">Branch / Section</label>
+                    <input 
+                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-primary font-black text-sm focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all placeholder:text-slate-300"
+                      placeholder="e.g. CSE-A"
+                      value={regForm.branch} 
+                      onChange={e => setRegForm(p => ({ ...p, branch: e.target.value }))} 
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-4 pt-4">
+                  <button 
+                    onClick={() => setShowRegModal(false)}
+                    className="flex-1 py-4 text-slate-400 hover:text-primary font-black text-sm rounded-2xl border border-slate-100 hover:bg-slate-50 transition-all"
+                  >
+                    Discard
+                  </button>
+                  <button 
+                    onClick={submitRegistration} 
+                    disabled={registering}
+                    className="flex-2 px-10 py-4 bg-primary hover:bg-primary/95 disabled:opacity-50 text-white font-black text-sm rounded-2xl transition-all flex items-center justify-center gap-3 shadow-xl shadow-primary/20"
+                  >
+                    {registering ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
+                    Confirm Application
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>
