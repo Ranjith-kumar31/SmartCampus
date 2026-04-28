@@ -9,14 +9,18 @@ import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
 import StudentDashboard from './pages/StudentDashboard';
 import ClubDashboard from './pages/ClubDashboard';
+
 import HODdashboard from './pages/HODdashboard';
 import AdminDashboard from './pages/AdminDashboard';
+
 import EventDetailsPage from './pages/EventDetailsPage';
 import EventsPage from './pages/EventsPage';
 
 function App() {
   return (
     <Router>
+
+      
       <Toaster position="top-right"
         toastOptions={{
           style: {

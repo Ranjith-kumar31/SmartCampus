@@ -114,10 +114,10 @@ const EventDetailsPage = () => {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-white flex items-center justify-center">
+    <div className="min-h-screen bg-white dark:bg-dark flex items-center justify-center">
       <div className="text-center space-y-4">
-        <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
-        <p className="text-slate-500 font-medium">Loading event details...</p>
+        <Loader2 className="w-10 h-10 text-primary dark:text-secondary animate-spin mx-auto" />
+        <p className="text-slate-500 dark:text-slate-400 font-medium">Loading event details...</p>
       </div>
     </div>
   );
@@ -141,16 +141,16 @@ const EventDetailsPage = () => {
   const prizes = Array.isArray(event.prizes) ? event.prizes : [];
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 pb-32 font-sans">
+    <div className="min-h-screen bg-slate-50 dark:bg-dark text-slate-800 dark:text-slate-200 pb-32 font-sans">
 
       {/* Top Nav */}
-      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100 px-6 py-5 flex items-center justify-between">
-        <button onClick={() => navigate(-1)} className="p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl transition-all border border-slate-200">
-          <ChevronLeft className="w-6 h-6 text-primary" />
+      <div className="sticky top-0 z-50 bg-white/80 dark:bg-dark/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800 px-6 py-5 flex items-center justify-between">
+        <button onClick={() => navigate(-1)} className="p-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all border border-slate-200 dark:border-slate-700">
+          <ChevronLeft className="w-6 h-6 text-primary dark:text-white" />
         </button>
-        <h1 className="text-lg font-black text-primary truncate max-w-[60%] tracking-tight">Event Details</h1>
-        <button onClick={handleShare} className="p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl transition-all border border-slate-200">
-          <Share2 className="w-5 h-5 text-primary" />
+        <h1 className="text-lg font-black text-primary dark:text-white truncate max-w-[60%] tracking-tight">Event Details</h1>
+        <button onClick={handleShare} className="p-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all border border-slate-200 dark:border-slate-700">
+          <Share2 className="w-5 h-5 text-primary dark:text-white" />
         </button>
       </div>
 
@@ -184,11 +184,11 @@ const EventDetailsPage = () => {
           <div className="lg:col-span-2 space-y-10">
             {/* Description */}
             <div className="space-y-4">
-              <h3 className="text-xl font-black text-primary flex items-center gap-2">
+              <h3 className="text-xl font-black text-primary dark:text-white flex items-center gap-2">
                 <div className="w-2 h-8 bg-secondary rounded-full" />
                 About the Event
               </h3>
-              <p className="text-slate-500 text-base md:text-lg leading-relaxed font-medium">
+              <p className="text-slate-500 dark:text-slate-400 text-base md:text-lg leading-relaxed font-medium">
                 {event.description || 'No description provided.'}
               </p>
             </div>
@@ -201,30 +201,30 @@ const EventDetailsPage = () => {
                 { icon: MapPin, label: 'Venue', value: event.location || 'TBD', color: 'text-emerald-600', bg: 'bg-emerald-50' },
                 { icon: IndianRupee, label: 'Entry Fee', value: (!event.regFee || event.regFee === 0) ? 'Free' : `₹${event.regFee}`, color: 'text-amber-600', bg: 'bg-amber-50' },
               ].map(({ icon: Icon, label, value, color, bg }) => (
-                <div key={label} className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-all group">
-                  <div className={`w-12 h-12 ${bg} rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110`}>
-                    <Icon className={`w-6 h-6 ${color}`} />
+                <div key={label} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-all group">
+                  <div className={`w-12 h-12 ${bg} dark:bg-opacity-10 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110`}>
+                    <Icon className={`w-6 h-6 ${color} dark:text-secondary`} />
                   </div>
-                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mb-1">{label}</p>
-                  <p className="text-primary font-black text-lg truncate tracking-tight">{value}</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-[0.2em] mb-1">{label}</p>
+                  <p className="text-primary dark:text-white font-black text-lg truncate tracking-tight">{value}</p>
                 </div>
               ))}
             </div>
 
             {/* Rules */}
             {rules.length > 0 && (
-              <div className="bg-white border border-slate-100 rounded-[3rem] p-8 md:p-10 shadow-sm">
-                <h3 className="text-2xl font-black text-primary mb-8 flex items-center gap-3">
+              <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[3rem] p-8 md:p-10 shadow-sm">
+                <h3 className="text-2xl font-black text-primary dark:text-white mb-8 flex items-center gap-3">
                   <span className="p-3 bg-secondary/10 rounded-2xl text-secondary">⚖️</span>
                   Guidelines
                 </h3>
                 <ul className="space-y-6">
                   {rules.map((rule: string, idx: number) => (
                     <li key={idx} className="flex gap-4 items-start group">
-                      <div className="w-6 h-6 bg-primary/5 border border-primary/10 rounded-md flex items-center justify-center shrink-0 mt-1 font-black text-[10px] text-primary">
+                      <div className="w-6 h-6 bg-primary/5 dark:bg-white/5 border border-primary/10 dark:border-white/10 rounded-md flex items-center justify-center shrink-0 mt-1 font-black text-[10px] text-primary dark:text-secondary">
                         {idx + 1}
                       </div>
-                      <span className="text-slate-600 font-bold leading-relaxed">{rule}</span>
+                      <span className="text-slate-600 dark:text-slate-400 font-bold leading-relaxed">{rule}</span>
                     </li>
                   ))}
                 </ul>
@@ -280,7 +280,7 @@ const EventDetailsPage = () => {
       </div>
 
       {/* Sticky Bottom Bar */}
-      <div className="fixed bottom-0 left-0 w-full p-6 bg-white/80 backdrop-blur-2xl border-t border-slate-100 z-50 flex justify-center shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+      <div className="fixed bottom-0 left-0 w-full p-6 bg-white/80 dark:bg-dark/80 backdrop-blur-2xl border-t border-slate-100 dark:border-slate-800 z-50 flex justify-center shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
         <div className="w-full max-w-4xl flex items-center justify-between gap-6">
           <div className="hidden md:block">
             <p className="text-primary font-black text-xl leading-none">Registration Status</p>

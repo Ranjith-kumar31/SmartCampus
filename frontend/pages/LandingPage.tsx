@@ -4,9 +4,9 @@ import { Link } from 'react-router-dom';
 
 const LandingPage = () => {
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-dark">
       {/* Hero Section */}
-      <section className="relative pt-32 pb-48 overflow-hidden bg-gradient-to-b from-primary via-primary/95 to-white">
+      <section className="relative pt-32 pb-48 overflow-hidden bg-gradient-to-b from-primary via-primary/95 to-white dark:to-dark">
         {/* Decorative elements */}
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-secondary/10 blur-[150px] rounded-full -translate-y-1/2 translate-x-1/2" />
         

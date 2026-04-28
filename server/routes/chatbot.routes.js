@@ -2,7 +2,8 @@ const express = require("express");
 const https = require("https");
 const axios = require("axios");
 const wiki = require("wikipedia");
-const supabase = require("../utils/supabase");
+const Event = require("../models/Event");
+
 
 const router = express.Router();
 
@@ -141,28 +142,23 @@ async function fetchGoogleResults(query) {
 
 async function searchEvents(keywords, department = null, isBroad = false) {
   try {
-    const { data, error } = await supabase
-      .from("events")
-      .select("*, clubs(name)")
-      .eq("status", "Approved");
-
-    if (error || !data) return [];
+    const events = await Event.find({ status: "Approved" }).populate('club');
 
     const today = new Date().toISOString().split("T")[0];
-    const upcoming = data.filter((e) => e.date >= today);
+    const upcoming = events.filter((e) => e.date >= today);
 
     // If it's a broad search and no keywords, return all upcoming
     if (isBroad && keywords.length === 0) {
       return upcoming
         .map(e => ({
-          id: e.id,
+          id: e._id,
           title: e.title,
           domain: e.domain,
           date: e.date,
           time: e.time,
           location: e.location,
-          regFee: e.reg_fee,
-          clubName: e.clubs?.name || "Unknown Club",
+          regFee: e.regFee,
+          clubName: e.club?.name || "Unknown Club",
           score: (department && e.domain?.toLowerCase().includes(department.toLowerCase())) ? 10 : 0
         }))
         .sort((a, b) => b.score - a.score)
@@ -189,14 +185,14 @@ async function searchEvents(keywords, department = null, isBroad = false) {
         }
 
         return {
-          id: event.id,
+          id: event._id,
           title: event.title,
           domain: event.domain,
           date: event.date,
           time: event.time,
           location: event.location,
-          regFee: event.reg_fee,
-          clubName: event.clubs?.name || "Unknown Club",
+          regFee: event.regFee,
+          clubName: event.club?.name || "Unknown Club",
           score
         };
       })
@@ -209,6 +205,7 @@ async function searchEvents(keywords, department = null, isBroad = false) {
     return [];
   }
 }
+
 
 /* ───────────────── RESPONSE ENGINE ───────────────── */
 

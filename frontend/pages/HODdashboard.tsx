@@ -158,8 +158,8 @@ const HODdashboard = () => {
             {/* OD Table + Pie */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
               <div className="lg:col-span-2 dashboard-card overflow-hidden">
-                <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
-                  <h3 className="text-white font-bold">Pending OD Requests</h3>
+                <div className="px-5 py-4 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
+                  <h3 className="text-primary dark:text-white font-bold">Pending OD Requests</h3>
                   <span className="text-xs text-slate-500">{filteredODs.length} requests</span>
                 </div>
 
@@ -191,7 +191,7 @@ const HODdashboard = () => {
                     ) : filteredODs.map((req: any) => (
                       <tr key={req._id || req.id} className="hover:bg-white/[0.02] transition-colors">
                         <td className="px-5 py-3.5">
-                          <p className="text-white font-medium">{req.student?.name || 'Unknown'}</p>
+                          <p className="text-primary dark:text-white font-medium">{req.student?.name || 'Unknown'}</p>
                           <p className="text-slate-500 text-[10px] mt-0.5">
                             {req.student?.rollNumber || 'N/A'} • {req.registration?.year || 'N/A'} {req.registration?.branch ? `(${req.registration.branch})` : ''}
                           </p>
@@ -225,7 +225,7 @@ const HODdashboard = () => {
               {/* Status Donut */}
               <div className="dashboard-card p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-white font-bold">OD Status Overview</h3>
+                  <h3 className="text-primary dark:text-white font-bold">OD Status Overview</h3>
                   <button className="text-slate-500 hover:text-white"><MoreHorizontal className="w-5 h-5" /></button>
                 </div>
                 <div className="h-48 relative">
@@ -263,7 +263,7 @@ const HODdashboard = () => {
             {/* Header with badge */}
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-white">Event Approvals</h2>
+                <h2 className="text-xl font-bold text-primary dark:text-white">Event Approvals</h2>
                 <p className="text-slate-400 text-sm mt-1">
                   Review and approve event proposals from <span className="text-indigo-400 font-semibold">{user.department}</span> department clubs
                 </p>
@@ -297,7 +297,7 @@ const HODdashboard = () => {
             ) : pendingEvents.length === 0 ? (
               <div className="dashboard-card p-16 text-center space-y-2">
                 <CalendarPlus className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                <p className="text-white font-medium">No Pending Event Proposals</p>
+                <p className="text-primary dark:text-white font-medium">No Pending Event Proposals</p>
                 <p className="text-slate-500 text-sm">All events from {user.department} clubs have been reviewed.</p>
               </div>
             ) : (
@@ -317,7 +317,7 @@ const HODdashboard = () => {
                             Pending HOD Review
                           </span>
                         </div>
-                        <h3 className="text-white font-bold text-lg">{event.title}</h3>
+                        <h3 className="text-primary dark:text-white font-bold text-lg">{event.title}</h3>
                         <p className="text-slate-400 text-sm mt-1 line-clamp-2">{event.description}</p>
                       </div>
                     </div>
@@ -387,7 +387,7 @@ const HODdashboard = () => {
         {/* Profile tab */}
         {activeTab === 'profile' && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-            <h2 className="text-xl font-bold text-white">Academic Administrator Profile</h2>
+            <h2 className="text-xl font-bold text-primary dark:text-white">Academic Administrator Profile</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-1 dashboard-card p-6 text-center">
                 <div className="w-24 h-24 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-4 border border-emerald-500/20 shadow-xl shadow-emerald-500/5">

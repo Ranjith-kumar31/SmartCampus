@@ -1,7 +1,8 @@
 const express = require('express');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
-const supabase = require('../utils/supabase');
+const Event = require('../models/Event');
+const Registration = require('../models/Registration');
 
 const router = express.Router();
 
@@ -13,27 +14,21 @@ const razorpay = new Razorpay({
 
 /**
  * POST /api/payments/create-order
- * Creates a Razorpay order for event registration fee
- * Body: { eventId, studentId }
  */
 router.post('/create-order', async (req, res) => {
   try {
     const { eventId, studentId } = req.body;
 
-    const { data: event, error } = await supabase
-      .from('events')
-      .select('title, reg_fee')
-      .eq('id', eventId)
-      .single();
+    const event = await Event.findById(eventId);
 
-    if (error || !event) return res.status(404).json({ message: 'Event not found' });
+    if (!event) return res.status(404).json({ message: 'Event not found' });
 
-    if (!event.reg_fee || event.reg_fee === 0) {
+    if (!event.regFee || event.regFee === 0) {
       return res.status(400).json({ message: 'This event is free — no payment needed.' });
     }
 
     const options = {
-      amount: event.reg_fee * 100, // Razorpay expects amount in paise (1 INR = 100 paise)
+      amount: event.regFee * 100,
       currency: 'INR',
       receipt: `receipt_${eventId.substring(0, 8)}_${studentId.substring(0, 8)}_${Date.now()}`,
       notes: {
@@ -62,8 +57,6 @@ router.post('/create-order', async (req, res) => {
 
 /**
  * POST /api/payments/verify
- * Verifies Razorpay payment signature and registers the student for the event
- * Body: { razorpay_order_id, razorpay_payment_id, razorpay_signature, eventId, studentId }
  */
 router.post('/verify', async (req, res) => {
   try {
@@ -75,7 +68,6 @@ router.post('/verify', async (req, res) => {
       studentId,
     } = req.body;
 
-    // Signature verification
     const body = razorpay_order_id + '|' + razorpay_payment_id;
     const expectedSignature = crypto
       .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
@@ -86,25 +78,21 @@ router.post('/verify', async (req, res) => {
       return res.status(400).json({ message: 'Payment verification failed — invalid signature.' });
     }
 
-    // Payment verified — register student for event
-    // Check if already registered
-    const { data: existingReg } = await supabase
-      .from('event_registrations')
-      .select('*')
-      .eq('event_id', eventId)
-      .eq('student_id', studentId)
-      .single();
+    const existingReg = await Registration.findOne({ event: eventId, student: studentId });
 
     if (existingReg) {
       return res.status(400).json({ message: 'Already registered for this event.' });
     }
 
-    // Register student
-    const { error: regError } = await supabase
-      .from('event_registrations')
-      .insert([{ event_id: eventId, student_id: studentId }]);
+    const registration = new Registration({
+        event: eventId,
+        student: studentId,
+    });
 
-    if (regError) throw regError;
+    await registration.save();
+    
+    // Also update Event array
+    await Event.findByIdAndUpdate(eventId, { $addToSet: { registeredStudents: studentId } });
 
     res.json({
       message: 'Payment verified and registration successful!',
@@ -119,10 +107,10 @@ router.post('/verify', async (req, res) => {
 
 /**
  * GET /api/payments/key
- * Returns the Razorpay key_id to the frontend (safe to expose)
  */
 router.get('/key', (req, res) => {
   res.json({ keyId: process.env.RAZORPAY_KEY_ID });
 });
 
 module.exports = router;
+

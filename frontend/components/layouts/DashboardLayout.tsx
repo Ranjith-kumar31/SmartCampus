@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, LogOut, Menu, HelpCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ChatbotWidget from '../ChatbotWidget';
+import ThemeToggle from '../ThemeToggle';
 
 interface NavItem {
   icon: React.ElementType;
@@ -60,7 +61,7 @@ const DashboardLayout = ({
 
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <div className="flex h-screen bg-slate-50 dark:bg-dark overflow-hidden transition-colors duration-300">
       {/* Logout Confirmation Modal */}
       <AnimatePresence>
         {showLogoutModal && (
@@ -76,7 +77,7 @@ const DashboardLayout = ({
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-sm bg-white border border-slate-200 rounded-[2.5rem] shadow-2xl p-10 mt-[-10vh]"
+              className="relative w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] shadow-2xl p-10 mt-[-10vh]"
             >
               <div className="flex flex-col items-center text-center">
                 <div className="w-20 h-20 rounded-[2rem] bg-red-50 flex items-center justify-center mb-6">
@@ -121,7 +122,7 @@ const DashboardLayout = ({
       </AnimatePresence>
 
       {/* Sidebar */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-[280px] bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-[280px] bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col transition-all duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         {/* Logo */}
         <div
           className="px-8 py-10 flex items-center gap-4 group cursor-pointer"
@@ -156,11 +157,10 @@ const DashboardLayout = ({
                   onViewChange(item.id);
                   setSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-4 px-5 py-4 rounded-[1.25rem] text-sm font-bold transition-all duration-300 ${
-                  isActive
+                className={`w-full flex items-center gap-4 px-5 py-4 rounded-[1.25rem] text-sm font-bold transition-all duration-300 ${isActive
                     ? `bg-primary text-white shadow-xl shadow-primary/15 scale-[1.02]`
-                    : 'text-slate-500 hover:text-primary hover:bg-primary/5'
-                }`}
+                    : 'text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-secondary hover:bg-primary/5 dark:hover:bg-primary/10'
+                  }`}
               >
                 <Icon className={`w-5 h-5 ${isActive ? 'text-secondary' : ''}`} />
                 {item.label}
@@ -204,7 +204,7 @@ const DashboardLayout = ({
       {/* Main Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Bar */}
-        <header className="h-24 bg-white/80 backdrop-blur-xl flex items-center px-6 lg:px-10 flex-shrink-0 relative z-30">
+        <header className="h-24 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl flex items-center px-6 lg:px-10 flex-shrink-0 relative z-30 border-b border-slate-100 dark:border-slate-800 transition-colors duration-300">
           {/* Mobile menu toggle */}
           <button className="lg:hidden mr-4 p-2 bg-slate-100 rounded-xl text-slate-600 hover:text-primary transition-colors" onClick={() => setSidebarOpen(true)}>
             <Menu className="w-6 h-6" />
@@ -212,7 +212,7 @@ const DashboardLayout = ({
 
           {/* Page Title Area */}
           <div className="flex flex-col">
-            <div className="flex items-center gap-3 text-primary font-black text-2xl tracking-tight">
+            <div className="flex items-center gap-3 text-primary dark:text-white font-black text-2xl tracking-tight">
               {titleIcon}
               {title}
             </div>
@@ -227,14 +227,15 @@ const DashboardLayout = ({
               <input
                 type="text"
                 placeholder={searchPlaceholder}
-                className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-6 py-3.5 text-sm text-primary font-medium placeholder-slate-400 focus:outline-none focus:border-primary/20 focus:ring-4 focus:ring-primary/5 transition-all"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl pl-12 pr-6 py-3.5 text-sm text-primary dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:border-primary/20 focus:ring-4 focus:ring-primary/5 transition-all"
               />
             </div>
           </div>
 
           {/* Right side icons */}
           <div className="flex items-center gap-5 ml-auto">
-            <button className="relative p-3 bg-slate-50 border border-slate-100 rounded-2xl text-slate-400 hover:text-primary hover:bg-white hover:shadow-md transition-all">
+            <ThemeToggle />
+            <button className="relative p-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl text-slate-400 hover:text-primary hover:bg-white dark:hover:bg-slate-700 hover:shadow-md transition-all">
               <Bell className="w-6 h-6" />
               <span className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white" />
             </button>
@@ -245,7 +246,7 @@ const DashboardLayout = ({
                 className="flex items-center gap-4 group"
               >
                 <div className="text-right hidden sm:block">
-                  <p className="text-primary text-sm font-black tracking-tight leading-none mb-1">{userName}</p>
+                  <p className="text-primary dark:text-white text-sm font-black tracking-tight leading-none mb-1">{userName}</p>
                   <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
                     {userId ? `ID: ${userId.toUpperCase()}` : userRole}
                   </p>
@@ -266,7 +267,7 @@ const DashboardLayout = ({
                       initial={{ opacity: 0, y: 15, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 15, scale: 0.95 }}
-                      className="absolute right-0 mt-5 w-60 bg-white border border-slate-100 rounded-[1.75rem] shadow-[0_20px_60px_rgba(0,0,0,0.1)] z-50 py-3 overflow-hidden p-2"
+                      className="absolute right-0 mt-5 w-60 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[1.75rem] shadow-[0_20px_60px_rgba(0,0,0,0.1)] z-50 py-3 overflow-hidden p-2"
                     >
                       <button
                         onClick={() => {

@@ -236,8 +236,8 @@ const ClubDashboard = () => {
       {activeView === 'overview' && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
           <div>
-            <h2 className="text-primary font-black text-3xl tracking-tight">Performance Intelligence</h2>
-            <p className="text-slate-500 font-medium mt-1">Real-time engagement metrics and operational overview</p>
+            <h2 className="text-primary dark:text-white font-black text-3xl tracking-tight">Performance Intelligence</h2>
+            <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">Real-time engagement metrics and operational overview</p>
           </div>
 
           {/* Stat Cards */}
@@ -249,9 +249,9 @@ const ClubDashboard = () => {
 
           {/* Chart Section */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 dashboard-card p-10 rounded-[3rem] border-slate-100 shadow-sm bg-white">
+            <div className="lg:col-span-2 dashboard-card p-10 rounded-[3rem] border-slate-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900">
               <div className="flex items-center justify-between mb-10">
-                 <h3 className="text-primary font-black text-xl tracking-tight">Registration Velocity</h3>
+                 <h3 className="text-primary dark:text-white font-black text-xl tracking-tight">Registration Velocity</h3>
                  <div className="flex gap-2">
                     <span className="w-3 h-3 rounded-full bg-primary" />
                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Strategic Performance</span>
@@ -383,8 +383,8 @@ const ClubDashboard = () => {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
           <div className="flex justify-between items-end">
             <div>
-              <h2 className="text-primary font-black text-3xl tracking-tight">Event Strategy Suite</h2>
-              <p className="text-slate-500 font-medium mt-1">Lifecycle management for club event deployments</p>
+              <h2 className="text-primary dark:text-white font-black text-3xl tracking-tight">Event Strategy Suite</h2>
+              <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">Lifecycle management for club event deployments</p>
             </div>
             <button onClick={() => setShowCreateModal(true)} className="bg-primary hover:bg-slate-800 text-white text-[10px] font-black uppercase tracking-[0.2em] px-8 py-4 rounded-2xl flex items-center gap-3 transition-all shadow-2xl shadow-primary/20">
               <PlusCircle className="w-4 h-4" /> Initialize Cluster
@@ -463,8 +463,8 @@ const ClubDashboard = () => {
       {activeView === 'participants' && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
           <div>
-            <h2 className="text-primary font-black text-3xl tracking-tight">Registration Auditing</h2>
-            <p className="text-slate-500 font-medium mt-1">Deep dive into participant metadata and acquisition status</p>
+            <h2 className="text-primary dark:text-white font-black text-3xl tracking-tight">Registration Auditing</h2>
+            <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">Deep dive into participant metadata and acquisition status</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -593,8 +593,8 @@ const ClubDashboard = () => {
       {activeView === 'scanner' && (
         <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="max-w-2xl mx-auto space-y-10 pb-20">
           <div className="text-center">
-            <h2 className="text-primary font-black text-3xl tracking-tight">Entry Verification Gateway</h2>
-            <p className="text-slate-500 font-medium mt-1">Authorized ticket decryption and access logging</p>
+            <h2 className="text-primary dark:text-white font-black text-3xl tracking-tight">Entry Verification Gateway</h2>
+            <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">Authorized ticket decryption and access logging</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-10">

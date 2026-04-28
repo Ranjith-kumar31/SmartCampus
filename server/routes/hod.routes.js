@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const supabase = require('../utils/supabase');
+const HOD = require('../models/HOD');
 
 const router = express.Router();
 
@@ -10,11 +10,7 @@ router.post('/register', async (req, res) => {
   try {
     const { name, email, password, department } = req.body;
 
-    const { data: existingHOD } = await supabase
-      .from('hods')
-      .select('email')
-      .eq('email', email)
-      .single();
+    const existingHOD = await HOD.findOne({ email });
 
     if (existingHOD) {
       return res.status(400).json({ message: 'HOD already exists' });
@@ -23,20 +19,14 @@ router.post('/register', async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const { data: hod, error } = await supabase
-      .from('hods')
-      .insert([
-        {
-          name,
-          email,
-          department,
-          password: hashedPassword
-        }
-      ])
-      .select()
-      .single();
+    const hod = new HOD({
+      name,
+      email,
+      department,
+      password: hashedPassword
+    });
 
-    if (error) throw error;
+    await hod.save();
 
     res.status(201).json({ message: 'HOD Registration successful. You can now log in.' });
 
@@ -51,13 +41,9 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const { data: hod, error } = await supabase
-      .from('hods')
-      .select('*')
-      .eq('email', email)
-      .single();
+    const hod = await HOD.findOne({ email });
 
-    if (error || !hod) {
+    if (!hod) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
@@ -68,7 +54,7 @@ router.post('/login', async (req, res) => {
 
     const payload = {
       user: {
-        id: hod.id,
+        id: hod._id,
         role: 'hod',
         department: hod.department
       }
@@ -83,7 +69,7 @@ router.post('/login', async (req, res) => {
         res.json({
           token,
           user: {
-            id: hod.id,
+            id: hod._id,
             name: hod.name,
             email: hod.email,
             department: hod.department,
@@ -100,3 +86,4 @@ router.post('/login', async (req, res) => {
 });
 
 module.exports = router;
+

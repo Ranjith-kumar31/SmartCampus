@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const supabase = require('../utils/supabase');
+const Club = require('../models/Club');
 const { verifyToken, isAdmin } = require('../middleware/auth');
 
 const router = express.Router();
@@ -36,24 +36,12 @@ router.post('/register', upload.single('proofFile'), async (req, res) => {
     const { name, email, password, coordinator, department } = req.body;
 
     // Check if club exists
-    const { data: existingEmail } = await supabase
-      .from('clubs')
-      .select('email')
-      .eq('email', email)
-      .single();
+    const existingClub = await Club.findOne({ $or: [{ email }, { name }] });
 
-    if (existingEmail) {
-      return res.status(400).json({ message: 'A club with this email already exists' });
-    }
-
-    // Check if club name exists
-    const { data: existingName } = await supabase
-      .from('clubs')
-      .select('name')
-      .eq('name', name)
-      .single();
-
-    if (existingName) {
+    if (existingClub) {
+      if (existingClub.email === email) {
+        return res.status(400).json({ message: 'A club with this email already exists' });
+      }
       return res.status(400).json({ message: 'A club with this name already exists' });
     }
 
@@ -61,23 +49,17 @@ router.post('/register', upload.single('proofFile'), async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const { data: club, error } = await supabase
-      .from('clubs')
-      .insert([
-        {
-          name,
-          email,
-          coordinator,
-          department,
-          password: hashedPassword,
-          proof_file: req.file ? req.file.filename : null,
-          status: 'Pending'
-        }
-      ])
-      .select('id, name, email, coordinator, department, status, proofFile:proof_file')
-      .single();
+    const club = new Club({
+      name,
+      email,
+      coordinator,
+      department,
+      password: hashedPassword,
+      proofFile: req.file ? req.file.filename : null,
+      status: 'Pending'
+    });
 
-    if (error) throw error;
+    await club.save();
 
     res.status(201).json({ message: 'Club registration submitted. Waiting for Admin approval.' });
 
@@ -94,13 +76,9 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     // Filter by email
-    const { data: club, error } = await supabase
-      .from('clubs')
-      .select('*, proofFile:proof_file')
-      .eq('email', email)
-      .single();
+    const club = await Club.findOne({ email });
 
-    if (error || !club) {
+    if (!club) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
@@ -118,7 +96,7 @@ router.post('/login', async (req, res) => {
     // Assign Token
     const payload = {
       club: {
-        id: club.id,
+        id: club._id,
         role: 'club',
         department: club.department
       }
@@ -133,7 +111,7 @@ router.post('/login', async (req, res) => {
         res.json({
           token,
           user: {
-            id: club.id,
+            id: club._id,
             name: club.name,
             email: club.email,
             coordinator: club.coordinator,
@@ -154,12 +132,7 @@ router.post('/login', async (req, res) => {
 // Admin - Get all clubs (protected: admin only)
 router.get('/all', verifyToken, isAdmin, async (req, res) => {
   try {
-    const { data: clubs, error } = await supabase
-      .from('clubs')
-      .select('_id:id, id, name, email, coordinator, department, status, proofFile:proof_file, created_at')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
+    const clubs = await Club.find().sort({ createdAt: -1 });
     res.json(clubs);
   } catch (error) {
     console.error(error);
@@ -177,30 +150,15 @@ router.patch('/:id/status', verifyToken, isAdmin, async (req, res) => {
       return res.status(400).json({ message: 'Invalid status. Must be Approved or Rejected.' });
     }
 
-    if (!clubId || clubId === 'undefined') {
-      return res.status(400).json({ message: 'Invalid club ID.' });
+    const club = await Club.findByIdAndUpdate(
+      clubId,
+      { status },
+      { new: true }
+    );
+
+    if (!club) {
+      return res.status(404).json({ message: `Club not found.` });
     }
-
-    // First verify the club exists
-    const { data: existing, error: findError } = await supabase
-      .from('clubs')
-      .select('id, name')
-      .eq('id', clubId)
-      .single();
-
-    if (findError || !existing) {
-      return res.status(404).json({ message: `Club not found. ID: ${clubId}` });
-    }
-
-    // Update the status
-    const { data: club, error: updateError } = await supabase
-      .from('clubs')
-      .update({ status })
-      .eq('id', clubId)
-      .select('_id:id, id, name, email, coordinator, department, status, proofFile:proof_file, created_at')
-      .single();
-
-    if (updateError) throw updateError;
 
     res.json({ message: `Club "${club.name}" ${status} successfully`, club });
   } catch (error) {

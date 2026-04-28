@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const supabase = require('../utils/supabase');
+const Student = require('../models/Student');
 const { sendEmail } = require('../utils/email');
 
 const router = express.Router();
@@ -12,24 +12,12 @@ router.post('/register', async (req, res) => {
     const { name, email, password, department, rollNumber } = req.body;
 
     // Check if student exists
-    const { data: existingEmail } = await supabase
-      .from('students')
-      .select('email')
-      .eq('email', email)
-      .single();
+    const existingStudent = await Student.findOne({ $or: [{ email }, { rollNumber }] });
 
-    if (existingEmail) {
-      return res.status(400).json({ message: 'Student already exists' });
-    }
-
-    // Check if roll number exists
-    const { data: existingRoll } = await supabase
-      .from('students')
-      .select('roll_number')
-      .eq('roll_number', rollNumber)
-      .single();
-
-    if (existingRoll) {
+    if (existingStudent) {
+      if (existingStudent.email === email) {
+        return res.status(400).json({ message: 'Student with this email already exists' });
+      }
       return res.status(400).json({ message: 'Roll number already in use' });
     }
 
@@ -37,21 +25,15 @@ router.post('/register', async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const { data: student, error } = await supabase
-      .from('students')
-      .insert([
-        {
-          name,
-          email,
-          department,
-          roll_number: rollNumber,
-          password: hashedPassword
-        }
-      ])
-      .select('id, name, email, department, rollNumber:roll_number')
-      .single();
+    const student = new Student({
+      name,
+      email,
+      department,
+      rollNumber,
+      password: hashedPassword
+    });
 
-    if (error) throw error;
+    await student.save();
 
     // Send Welcome Email async
     sendEmail({
@@ -74,13 +56,9 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     // Filter by email
-    const { data: student, error } = await supabase
-      .from('students')
-      .select('id, name, email, password, department, rollNumber:roll_number')
-      .eq('email', email)
-      .single();
+    const student = await Student.findOne({ email });
 
-    if (error || !student) {
+    if (!student) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
@@ -93,7 +71,7 @@ router.post('/login', async (req, res) => {
     // Assign Token
     const payload = {
       student: {
-        id: student.id,
+        id: student._id,
         role: 'student',
         department: student.department
       }
@@ -108,7 +86,7 @@ router.post('/login', async (req, res) => {
         res.json({
           token,
           user: {
-            id: student.id,
+            id: student._id,
             name: student.name,
             email: student.email,
             department: student.department,
@@ -126,3 +104,4 @@ router.post('/login', async (req, res) => {
 });
 
 module.exports = router;
+

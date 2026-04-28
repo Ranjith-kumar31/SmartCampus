@@ -1,76 +1,56 @@
 const express = require('express');
-const supabase = require('../utils/supabase');
+const Student = require('../models/Student');
+const Registration = require('../models/Registration');
+const ODRequest = require('../models/ODRequest');
+const Event = require('../models/Event');
 
 const router = express.Router();
 
 /**
  * GET /api/ai/suggestions/:studentId
- * Returns AI-powered event recommendations based on:
- * 1. Department (domain match)
- * 2. Past registration interest profiling
- * 3. OD approval history (HOD approval probability)
- * 4. Event urgency & free registration bonus
  */
 router.get('/suggestions/:studentId', async (req, res) => {
   try {
     const { studentId } = req.params;
 
     // Get student info
-    const { data: student, error: studentError } = await supabase
-      .from('students')
-      .select('*')
-      .eq('id', studentId)
-      .single();
-
-    if (studentError || !student) return res.status(404).json({ message: 'Student not found' });
+    const student = await Student.findById(studentId);
+    if (!student) return res.status(404).json({ message: 'Student not found' });
 
     // Events student already registered for
-    const { data: registrations, error: regError } = await supabase
-      .from('event_registrations')
-      .select('event_id, events(*, clubs(*))')
-      .eq('student_id', studentId);
+    const registrations = await Registration.find({ student: studentId }).populate({
+        path: 'event',
+        populate: { path: 'club' }
+    });
+ 
+    const registeredEvents = registrations.map(r => r.event).filter(e => !!e);
+    const registeredEventIds = new Set(registrations.map(r => r.event?._id.toString()));
 
-    if (regError) throw regError;
-
-    const registeredEvents = registrations.map(r => r.events);
-    const registeredEventIds = new Set(registrations.map(r => r.event_id));
-
-    // Build domain & club interest maps from past registrations
+    // Build domain & club interest maps
     const domainFrequency = {};
     const clubFrequency = {};
     registeredEvents.forEach((e) => {
-      if (!e) return;
       const domain = (e.domain || 'general').toLowerCase();
       domainFrequency[domain] = (domainFrequency[domain] || 0) + 1;
-      if (e.club_id) {
-        const cid = e.club_id.toString();
+      if (e.club) {
+        const cid = e.club._id.toString();
         clubFrequency[cid] = (clubFrequency[cid] || 0) + 1;
       }
     });
-
+                  
     // OD approval rate
-    const { data: odRequests, error: odError } = await supabase
-      .from('od_requests')
-      .select('status')
-      .eq('student_id', studentId);
-
-    if (odError) throw odError;
-
+    const odRequests = await ODRequest.find({ student: studentId });
     const odApproved = odRequests.filter((od) => od.status === 'Approved').length;
     const odTotal = odRequests.length;
     const odApprovalRate = odTotal > 0 ? odApproved / odTotal : 0.5;
 
+
     // All upcoming approved events not yet registered
     const today = new Date().toISOString().split('T')[0];
-    const { data: allEvents, error: allEventsError } = await supabase
-      .from('events')
-      .select('*, club:clubs(*)')
-      .eq('status', 'Approved');
-
-    if (allEventsError) throw allEventsError;
+    const allEvents = await Event.find({ status: 'Approved' }).populate('club');
 
     const upcomingNew = allEvents.filter((e) =>
-      !registeredEventIds.has(e.id) && e.date >= today
+      !registeredEventIds.has(e._id.toString()) && e.date >= today
     );
 
     // --- AI Scoring ---
@@ -95,7 +75,7 @@ router.get('/suggestions/:studentId', async (req, res) => {
       }
 
       // 3. Preferred club (up to 20 pts)
-      const clubId = event.club_id ? event.club_id.toString() : null;
+      const clubId = event.club ? event.club._id.toString() : null;
       if (clubId && clubFrequency[clubId]) {
         const pts = Math.min(20, clubFrequency[clubId] * 10);
         score += pts;
@@ -103,7 +83,7 @@ router.get('/suggestions/:studentId', async (req, res) => {
       }
 
       // 4. Free registration bonus (10 pts)
-      if (!event.reg_fee || event.reg_fee === 0) {
+      if (!event.regFee || event.regFee === 0) {
         score += 10;
         reasons.push('Free registration — no cost to join');
       }
@@ -139,16 +119,7 @@ router.get('/suggestions/:studentId', async (req, res) => {
 
       return {
         event: {
-          _id: event.id,
-          title: event.title,
-          domain: event.domain,
-          date: event.date,
-          time: event.time,
-          location: event.location,
-          regFee: event.reg_fee,
-          description: event.description,
-          club: event.club,
-          prizes: event.prizes,
+          ...event.toObject()
         },
         score,
         matchLabel,

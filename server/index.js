@@ -3,6 +3,13 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 
 dotenv.config();
+const mongoose = require('mongoose');
+
+// Database Connection
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('Connected to MongoDB'))
+  .catch((err) => console.error('MongoDB connection error:', err));
+
 
 const app = express();
 
@@ -31,6 +38,7 @@ const adminRoutes = require('./routes/admin.routes');
 const aiRoutes = require('./routes/ai.routes');
 const paymentRoutes = require('./routes/payment.routes');
 const chatbotRoutes = require('./routes/chatbot.routes');
+const authRoutes = require('./routes/auth.routes');
 
 app.use('/api/students', studentRoutes);
 app.use('/api/clubs', clubRoutes);
@@ -41,8 +49,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/chatbot', chatbotRoutes);
-
-app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/auth', authRoutes);
 
 // EmailJS Test Route
 const { sendEmail } = require('./utils/email');

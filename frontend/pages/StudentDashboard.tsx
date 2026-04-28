@@ -239,8 +239,8 @@ const categoryColors: Record<string, string> = {
                 <Sparkles className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h2 className="text-primary font-black text-2xl tracking-tight">Smart Career Path</h2>
-                <p className="text-slate-500 font-medium">Personalized opportunities discovered by our AI Engine</p>
+                <h2 className="text-primary dark:text-white font-black text-2xl tracking-tight">Smart Career Path</h2>
+                <p className="text-slate-500 dark:text-slate-400 font-medium">Personalized opportunities discovered by our AI Engine</p>
               </div>
             </div>
 
@@ -260,11 +260,11 @@ const categoryColors: Record<string, string> = {
                     <Brain className="w-10 h-10 text-white" />
                   </div>
                   <div className="flex-1 text-center md:text-left">
-                    <p className="text-primary font-black text-xs uppercase tracking-[0.2em] mb-2 leading-none">Global Growth Insight</p>
-                    <p className="text-slate-700 text-lg font-bold leading-tight">{aiSuggestions.insight}</p>
+                    <p className="text-primary dark:text-secondary font-black text-xs uppercase tracking-[0.2em] mb-2 leading-none">Global Growth Insight</p>
+                    <p className="text-slate-700 dark:text-slate-300 text-lg font-bold leading-tight">{aiSuggestions.insight}</p>
                   </div>
-                  <div className="text-center md:text-right shrink-0 bg-white px-8 py-4 rounded-3xl border border-primary/5 shadow-sm">
-                    <div className="text-3xl font-black text-primary leading-none mb-1">{aiSuggestions.totalRegistered}</div>
+                  <div className="text-center md:text-right shrink-0 bg-white dark:bg-slate-800 px-8 py-4 rounded-3xl border border-primary/5 dark:border-white/5 shadow-sm">
+                    <div className="text-3xl font-black text-primary dark:text-secondary leading-none mb-1">{aiSuggestions.totalRegistered}</div>
                     <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Registrations</div>
                   </div>
                 </div>
@@ -302,7 +302,7 @@ const categoryColors: Record<string, string> = {
 
                 {/* Recommendation Cards */}
                 <div>
-                  <h3 className="text-primary font-black text-xl mb-6 flex items-center gap-3">
+                  <h3 className="text-primary dark:text-white font-black text-xl mb-6 flex items-center gap-3">
                     <Zap className="w-5 h-5 text-amber-500 fill-amber-500" /> 
                     Tailored Opportunities
                   </h3>
@@ -406,8 +406,8 @@ const categoryColors: Record<string, string> = {
           <div className="space-y-8 pb-10">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h2 className="text-primary font-black text-2xl tracking-tight">Upcoming Events</h2>
-                <p className="text-slate-500 font-medium">Discover and participate in college activities</p>
+                <h2 className="text-primary dark:text-white font-black text-2xl tracking-tight">Upcoming Events</h2>
+                <p className="text-slate-500 dark:text-slate-400 font-medium">Discover and participate in college activities</p>
               </div>
               <div className="flex items-center gap-2">
                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Sort:</span>
@@ -476,21 +476,21 @@ const categoryColors: Record<string, string> = {
                         </div>
 
                         <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between gap-4">
-                           <div className="bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100">
-                              <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest leading-none mb-1">Fee</p>
-                              <p className="text-sm font-black text-primary leading-none">
-                                {event.regFee === 0 ? 'FREE' : `₹${event.regFee}`}
-                              </p>
-                           </div>
+                            <div className="bg-slate-50 dark:bg-slate-800/50 px-4 py-2 rounded-2xl border border-slate-100 dark:border-slate-800">
+                               <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest leading-none mb-1">Fee</p>
+                               <p className="text-sm font-black text-primary dark:text-white leading-none">
+                                 {event.regFee === 0 ? 'FREE' : `₹${event.regFee}`}
+                               </p>
+                            </div>
                            <button
-                             onClick={() => navigate(`/event/${eId}`)}
+                             onClick={() => navigate(`/events/${eId}`)}
                              className={`flex-1 py-3 text-sm font-black rounded-2xl transition-all ${
                                isRegistered 
                                ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
                                : 'bg-primary text-white hover:bg-slate-800 shadow-lg shadow-primary/20 transition-all active:scale-95'
                              }`}
                            >
-                             {isRegistered ? 'Registered ✅' : 'View Pass →'}
+                             {isRegistered ? 'Registered ✅' : 'Participate →'}
                            </button>
                         </div>
                       </div>
@@ -506,8 +506,8 @@ const categoryColors: Record<string, string> = {
         {activeTab === 'tickets' && (
           <div className="space-y-8 pb-10">
             <div>
-              <h2 className="text-primary font-black text-2xl tracking-tight">My Active Passes</h2>
-              <p className="text-slate-500 font-medium">Your secured entry tickets for upcoming events</p>
+              <h2 className="text-primary dark:text-white font-black text-2xl tracking-tight">My Active Passes</h2>
+              <p className="text-slate-500 dark:text-slate-400 font-medium">Your secured entry tickets for upcoming events</p>
             </div>
             {registeredEvents.length === 0 ? (
               <div className="dashboard-card p-20 text-center rounded-[3rem]">
@@ -530,14 +530,14 @@ const categoryColors: Record<string, string> = {
           <div className="space-y-8 pb-10">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-primary font-black text-2xl tracking-tight">OD Request History</h2>
-                <p className="text-slate-500 font-medium">Status of your On-Duty applications</p>
+                <h2 className="text-primary dark:text-white font-black text-2xl tracking-tight">OD Request History</h2>
+                <p className="text-slate-500 dark:text-slate-400 font-medium">Status of your On-Duty applications</p>
               </div>
               <button 
                 onClick={() => setShowOdModal(true)}
                 className="bg-primary hover:bg-slate-800 text-white font-black px-6 py-3 rounded-2xl transition-all shadow-lg shadow-primary/20 flex items-center gap-2"
               >
-                <Send className="w-4 h-4" /> New Request
+                <Send className="w-4 h-4" /> Request OD
               </button>
             </div>
             <div className="dashboard-card overflow-hidden rounded-[2.5rem] border-slate-100 shadow-sm">
@@ -571,46 +571,6 @@ const categoryColors: Record<string, string> = {
           </div>
         )}
 
-        {/* ===== OD TAB ===== */}
-        {activeTab === 'od' && (
-          <div>
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-xl font-bold text-white">OD Request History</h2>
-              <button onClick={() => setShowOdModal(true)} className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors flex items-center gap-2">
-                <Send className="w-4 h-4" /> New Request
-              </button>
-            </div>
-            <div className="dashboard-card overflow-hidden">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-white/[0.06]">
-                    <th className="px-5 py-3.5 text-[11px] uppercase tracking-wider text-slate-500 font-semibold">Event Name</th>
-                    <th className="px-5 py-3.5 text-[11px] uppercase tracking-wider text-slate-500 font-semibold">Date</th>
-                    <th className="px-5 py-3.5 text-[11px] uppercase tracking-wider text-slate-500 font-semibold">Reason</th>
-                    <th className="px-5 py-3.5 text-[11px] uppercase tracking-wider text-slate-500 font-semibold">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/[0.04]">
-                  {odLoading ? (
-                    <tr><td colSpan={4} className="px-5 py-8 text-center text-slate-500">Loading...</td></tr>
-                  ) : odRequests.length === 0 ? (
-                    <tr><td colSpan={4} className="px-5 py-8 text-center text-slate-500">No OD requests yet.</td></tr>
-                  ) : (
-                    odRequests.map((req: any) => (
-                      <tr key={req._id} className="hover:bg-white/[0.02] transition-colors">
-                        <td className="px-5 py-3.5 font-medium text-white">{req.event?.title || 'N/A'}</td>
-                        <td className="px-5 py-3.5 text-slate-400">{req.event?.date || 'N/A'}</td>
-                        <td className="px-5 py-3.5 text-slate-400 max-w-[200px] truncate">{req.reason}</td>
-                        <td className="px-5 py-3.5"><StatusBadge status={req.status} /></td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
         {/* ===== PROFILE TAB ===== */}
         {activeTab === 'profile' && (() => {
           const today = new Date().toISOString().split('T')[0];
@@ -620,7 +580,7 @@ const categoryColors: Record<string, string> = {
 
           return (
             <div className="space-y-8 pb-10">
-              <h2 className="text-primary font-black text-2xl tracking-tight">Academic Identity</h2>
+              <h2 className="text-primary dark:text-white font-black text-2xl tracking-tight">Academic Identity</h2>
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Profile Card */}
                 <div className="lg:col-span-4 space-y-6">
@@ -748,7 +708,8 @@ const categoryColors: Record<string, string> = {
                 <div className="space-y-6">
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-[0.2em]">Validated Event</label>
-                    <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-primary focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all appearance-none" 
+                    <select 
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl px-6 py-4 text-primary dark:text-white font-black text-sm focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all appearance-none cursor-pointer"
                       value={selectedEventForOd} onChange={(e) => setSelectedEventForOd(e.target.value)}>
                       <option value="" disabled>Choose from your registrations</option>
                       {registeredEvents.map((ev: any) => (
@@ -760,7 +721,7 @@ const categoryColors: Record<string, string> = {
                   
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-[0.2em]">Context / Reason</label>
-                    <textarea className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-primary focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all resize-none h-32" 
+                    <textarea className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-6 py-4 text-sm font-bold text-primary dark:text-white focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all resize-none h-32" 
                       placeholder="Explain your participation role..."
                       value={odReason} onChange={(e) => setOdReason(e.target.value)} />
                   </div>
@@ -784,55 +745,66 @@ const categoryColors: Record<string, string> = {
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xl"
             onClick={() => setShowRegModal(false)}>
             <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl relative overflow-hidden" 
+              className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[3rem] w-full max-w-lg p-10 relative shadow-2xl overflow-hidden" 
               onClick={e => e.stopPropagation()}>
               
-              <div className={`h-2 w-full ${categoryColors[regEventTarget.domain] || 'bg-primary'}`} />
-              <button onClick={() => setShowRegModal(false)} className="absolute top-8 right-8 text-slate-400 hover:text-primary transition-colors">
-                <XCircle className="w-8 h-8" />
+              <div className={`absolute top-0 left-0 h-2 w-full ${categoryColors[regEventTarget.domain] || 'bg-primary'}`} />
+              <button onClick={() => setShowRegModal(false)} className="absolute top-8 right-8 p-2 bg-slate-50 dark:bg-slate-800 rounded-xl text-slate-400 hover:text-primary transition-colors">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
 
-              <div className="p-10">
-                <div className="mb-8">
-                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/40 mb-2 block">Secure Registration</span>
-                  <h3 className="text-2xl font-black text-primary tracking-tight leading-tight">{regEventTarget.title}</h3>
+              <div className="mb-8 mt-4">
+                  <span className="text-secondary font-black text-xs uppercase tracking-widest mb-2 block">Application Form</span>
+                  <h3 className="text-3xl font-black text-primary dark:text-white leading-tight tracking-tighter">{regEventTarget.title}</h3>
                   <div className="flex items-center gap-4 mt-3">
                      <span className="text-slate-400 text-xs font-bold flex items-center gap-1.5"><CalendarDays className="w-4 h-4" /> {regEventTarget.date}</span>
                      <span className="text-slate-400 text-xs font-bold flex items-center gap-1.5"><MapPin className="w-4 h-4" /> {regEventTarget.location?.split(',')[0]}</span>
                   </div>
                 </div>
 
-                <div className="bg-slate-50 border border-slate-100 rounded-[2rem] p-6 mb-8 grid grid-cols-2 gap-y-4 gap-x-6">
+                <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-6 mb-8 grid grid-cols-2 gap-y-4 gap-x-6">
                    <div className="col-span-2 text-[9px] font-black uppercase tracking-widest text-slate-400 mb-[-8px]">Identity Sync</div>
-                   <div><p className="text-[10px] text-slate-400 font-bold uppercase">Name</p><p className="text-primary text-sm font-black truncate">{user.name}</p></div>
-                   <div><p className="text-[10px] text-slate-400 font-bold uppercase">Roll No</p><p className="text-primary text-sm font-black">{user.rollNumber || 'VERIFYING'}</p></div>
+                   <div><p className="text-[10px] text-slate-400 font-bold uppercase">Name</p><p className="text-primary dark:text-white text-sm font-black truncate">{user.name}</p></div>
+                   <div><p className="text-[10px] text-slate-400 font-bold uppercase">Roll No</p><p className="text-primary dark:text-white text-sm font-black">{user.rollNumber || 'VERIFYING'}</p></div>
                 </div>
 
                 <div className="space-y-5">
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-[0.2em]">Contact Primary <span className="text-rose-500">*</span></label>
-                    <input type="tel" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-primary focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all" 
-                      placeholder="e.g. 9876543210" value={regForm.phone} onChange={e => setRegForm(p => ({ ...p, phone: e.target.value }))} />
+                    <input 
+                      type="tel" 
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl px-6 py-4 text-primary dark:text-white font-black text-sm focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
+                      placeholder="e.g. 9876543210"
+                      value={regForm.phone} 
+                      onChange={e => setRegForm(p => ({ ...p, phone: e.target.value }))} 
+                    />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-[0.2em]">Academic Year <span className="text-rose-500">*</span></label>
-                      <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-primary focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all" 
-                        value={regForm.year} onChange={e => setRegForm(p => ({ ...p, year: e.target.value }))}>
+                      <select 
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl px-6 py-4 text-primary dark:text-white font-black text-sm focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all appearance-none cursor-pointer"
+                        value={regForm.year} 
+                        onChange={e => setRegForm(p => ({ ...p, year: e.target.value }))}
+                      >
                         <option value="">Select</option>
                         {['1st Year', '2nd Year', '3rd Year', '4th Year'].map(y => <option key={y} value={y}>{y}</option>)}
                       </select>
                     </div>
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-[0.2em]">Section</label>
-                      <input className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-primary focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all" 
-                        placeholder="e.g. CSE-B" value={regForm.branch} onChange={e => setRegForm(p => ({ ...p, branch: e.target.value }))} />
+                      <input 
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl px-6 py-4 text-primary dark:text-white font-black text-sm focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
+                        placeholder="e.g. CSE-A"
+                        value={regForm.branch} 
+                        onChange={e => setRegForm(p => ({ ...p, branch: e.target.value }))} 
+                      />
                     </div>
                   </div>
 
                   <div className="flex gap-4 pt-4">
-                    <button onClick={() => setShowRegModal(false)} className="flex-1 py-4 text-slate-400 hover:text-primary text-sm font-black transition-all border-2 border-transparent hover:border-slate-100 rounded-2xl">Cancel</button>
+                    <button onClick={() => setShowRegModal(false)} className="flex-1 py-4 text-slate-400 dark:text-slate-500 hover:text-primary text-sm font-black transition-all border-2 border-transparent hover:border-slate-100 rounded-2xl">Cancel</button>
                     <button onClick={submitRegistration} disabled={regLoading || !regForm.phone || !regForm.year}
                       className="flex-1 py-4 bg-primary hover:bg-slate-800 disabled:opacity-50 text-white text-sm font-black rounded-2xl transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3">
                       {regLoading ? <span className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" /> : null}
@@ -840,7 +812,6 @@ const categoryColors: Record<string, string> = {
                     </button>
                   </div>
                 </div>
-              </div>
             </motion.div>
           </motion.div>
         )}

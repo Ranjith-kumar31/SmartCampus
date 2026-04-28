@@ -1,18 +1,17 @@
 const express = require('express');
-const supabase = require('../utils/supabase');
+const Event = require('../models/Event');
+const Registration = require('../models/Registration');
+const Club = require('../models/Club');
+const Student = require('../models/Student');
 const { verifyToken, isAdmin, isHOD } = require('../middleware/auth');
+const { sendEmail } = require('../utils/email');
 
 const router = express.Router();
 
 // Get all approved events
 router.get('/', async (req, res) => {
   try {
-    const { data: events, error } = await supabase
-      .from('events')
-      .select('*, _id:id, regFee:reg_fee, clubId:club_id, club:clubs(id, _id:id, name, coordinator, email)')
-      .eq('status', 'Approved');
-
-    if (error) throw error;
+    const events = await Event.find({ status: 'Approved' }).populate('club');
     res.json(events);
   } catch (error) {
     console.error(error);
@@ -28,28 +27,29 @@ router.post('/', async (req, res) => {
       expectedAudience, regFee, description, rules, prizes
     } = req.body;
 
-    const { data: newEvent, error } = await supabase
-      .from('events')
-      .insert([
-        {
-          title,
-          club_id: clubId,
-          domain,
-          date,
-          time,
-          location,
-          expected_audience: expectedAudience,
-          reg_fee: regFee,
-          description,
-          rules: rules || [],
-          prizes: prizes || [],
-          status: 'Pending'
-        }
-      ])
-      .select('*, _id:id, regFee:reg_fee, clubId:club_id')
-      .single();
+    const newEvent = new Event({
+      title,
+      club: clubId,
+      domain,
+      date,
+      time,
+      location,
+      expectedAudience,
+      regFee,
+      description,
+      rules: rules || [],
+      prizes: prizes || [],
+      status: 'Pending'
+    });
 
-    if (error) throw error;
+    await newEvent.save();
+
+    // Notify Admin about the new event proposal
+    sendEmail({
+      to_name: 'System Administrator',
+      to_email: 'admin@smartcampus.edu',
+      message: `A new event proposal "${title}" has been submitted by a club. Please review it in the admin dashboard.`
+    }).catch(err => console.error("Failed to send admin notification email:", err));
 
     res.status(201).json({ message: 'Event proposed successfully. Pending admin approval.', event: newEvent });
   } catch (error) {
@@ -66,22 +66,16 @@ router.get('/hod-pending', verifyToken, isHOD, async (req, res) => {
       return res.status(400).json({ message: 'HOD department not found in token' });
     }
 
-    console.log(`HOD pending events: dept=${hodDepartment}`);
+    // Find all clubs in this department
+    const clubsInDept = await Club.find({ department: hodDepartment }).select('_id');
+    const clubIds = clubsInDept.map(c => c._id);
 
-    // Fetch all pending events with club info — JS filter handles dept matching
-    const { data: events, error } = await supabase
-      .from('events')
-      .select('*, _id:id, regFee:reg_fee, clubId:club_id, expectedAudience:expected_audience, club:clubs(id, name, coordinator, department, email)')
-      .eq('status', 'Pending')
-      .not('club_id', 'is', null);
+    const pendingEvents = await Event.find({
+      status: 'Pending',
+      club: { $in: clubIds }
+    }).populate('club');
 
-    if (error) { console.error('hod-pending error:', error); throw error; }
-
-    // Filter to only events from clubs in this HOD's department
-    const deptEvents = (events || []).filter(e => e.club?.department === hodDepartment);
-    console.log(`Returning ${deptEvents.length} events for dept ${hodDepartment}`);
-
-    res.json(deptEvents);
+    res.json(pendingEvents);
   } catch (error) {
     console.error('HOD pending events error:', error);
     res.status(500).json({ message: 'Server error while fetching pending events for HOD' });
@@ -96,69 +90,47 @@ router.patch('/:id/hod-approve', verifyToken, isHOD, async (req, res) => {
     const hodDepartment = req.decoded?.user?.department;
     const eventId = req.params.id;
 
-    console.log(`HOD approve request: eventId=${eventId}, status=${status}, hodDept=${hodDepartment}`);
-
     if (!['Approved', 'Rejected'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status. Use Approved or Rejected.' });
     }
 
-    if (!eventId || eventId === 'undefined') {
-      return res.status(400).json({ message: 'Invalid event ID.' });
-    }
+    const event = await Event.findById(eventId).populate('club');
 
-    // Fetch event with club department info
-    // Using alias 'club:clubs(...)' so Supabase returns event.club
-    const { data: event, error: findError } = await supabase
-      .from('events')
-      .select('id, title, status, club_id, club:clubs(id, department)')
-      .eq('id', eventId)
-      .single();
-
-    if (findError || !event) {
-      console.error('Find event error:', findError);
+    if (!event) {
       return res.status(404).json({ message: 'Event not found.' });
     }
 
-    console.log(`Event found: "${event.title}", club dept: ${event.club?.department}, HOD dept: ${hodDepartment}`);
-
-    // Validate the club belongs to the HOD's department
-    // If no department on club (edge case), still allow HOD to proceed
+    // Validate department
     if (hodDepartment && event.club?.department && event.club.department !== hodDepartment) {
       return res.status(403).json({
-        message: `Access denied. This event belongs to the ${event.club.department} department. You manage the ${hodDepartment} department.`
+        message: `Access denied. This event belongs to the ${event.club.department} department.`
       });
     }
 
     if (event.status !== 'Pending') {
-      return res.status(400).json({ message: `This event is already ${event.status} and cannot be changed.` });
+      return res.status(400).json({ message: `This event is already ${event.status}.` });
     }
 
-    // Update ONLY the status field (hod_remarks/hod_approved_at are optional columns)
-    // If you have added them via SQL migration, uncomment the lines below
-    const updatePayload = { status };
-    // updatePayload.hod_remarks = remarks || `${status} by HOD`;
-    // updatePayload.hod_approved_at = new Date().toISOString();
+    event.status = status;
+    // If you add remarks to the schema, save them here
+    await event.save();
 
-    const { data: updated, error: updateError } = await supabase
-      .from('events')
-      .update(updatePayload)
-      .eq('id', eventId)
-      .select('id, title, status')
-      .single();
-
-    if (updateError) {
-      console.error('Supabase update error:', JSON.stringify(updateError));
-      throw updateError;
+    // Notify Club about HOD's decision
+    if (event.club && event.club.email) {
+      sendEmail({
+        to_name: event.club.name,
+        to_email: event.club.email,
+        message: `Your event proposal "${event.title}" has been ${status} by the HOD of ${hodDepartment} department.`
+      }).catch(err => console.error("Failed to send club notification email:", err));
     }
 
-    console.log(`Event "${updated.title}" successfully set to ${status}`);
     res.json({
-      message: `Event "${updated.title}" ${status} successfully! ${status === 'Approved' ? 'It is now live on Smart Campus.' : 'The club has been notified.'}`,
-      event: updated,
+      message: `Event "${event.title}" ${status} successfully!`,
+      event,
     });
   } catch (error) {
     console.error('HOD event approve error:', error);
-    res.status(500).json({ message: error.message || 'Server error while processing event approval' });
+    res.status(500).json({ message: 'Server error while processing event approval' });
   }
 });
 
@@ -166,12 +138,7 @@ router.patch('/:id/hod-approve', verifyToken, isHOD, async (req, res) => {
 // Admin/HOD - Get all pending events (protected: admin only)
 router.get('/pending', verifyToken, isAdmin, async (req, res) => {
   try {
-    const { data: events, error } = await supabase
-      .from('events')
-      .select('*, _id:id, regFee:reg_fee, clubId:club_id, club:clubs(id, _id:id, name, coordinator)')
-      .eq('status', 'Pending');
-
-    if (error) throw error;
+    const events = await Event.find({ status: 'Pending' }).populate('club');
     res.json(events);
   } catch (error) {
     console.error(error);
@@ -183,14 +150,24 @@ router.get('/pending', verifyToken, isAdmin, async (req, res) => {
 router.patch('/:id/status', verifyToken, isAdmin, async (req, res) => {
   try {
     const { status } = req.body;
-    const { data: event, error } = await supabase
-      .from('events')
-      .update({ status })
-      .eq('id', req.params.id)
-      .select('*, _id:id, regFee:reg_fee, clubId:club_id')
-      .single();
+    const event = await Event.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
 
-    if (error || !event) return res.status(404).json({ message: 'Event not found' });
+    if (!event) return res.status(404).json({ message: 'Event not found' });
+
+    // Notify Club about Admin's decision
+    const populatedEvent = await Event.findById(req.params.id).populate('club');
+    if (populatedEvent && populatedEvent.club && populatedEvent.club.email) {
+      sendEmail({
+        to_name: populatedEvent.club.name,
+        to_email: populatedEvent.club.email,
+        message: `The system administrator has updated your event "${populatedEvent.title}" status to: ${status}.`
+      }).catch(err => console.error("Failed to send club status update email:", err));
+    }
+
     res.json({ message: `Event status updated to ${status}`, event });
   } catch (error) {
     console.error(error);
@@ -208,14 +185,9 @@ router.post('/:id/register', async (req, res) => {
       return res.status(400).json({ message: 'Student ID is required' });
     }
 
-    // Check event exists and is approved
-    const { data: event, error: evtErr } = await supabase
-      .from('events')
-      .select('id, title, status')
-      .eq('id', eventId)
-      .single();
+    const event = await Event.findById(eventId);
 
-    if (evtErr || !event) {
+    if (!event) {
       return res.status(404).json({ message: 'Event not found' });
     }
     if (event.status !== 'Approved') {
@@ -223,36 +195,39 @@ router.post('/:id/register', async (req, res) => {
     }
 
     // Check if already registered
-    const { data: existingReg } = await supabase
-      .from('event_registrations')
-      .select('id')
-      .eq('event_id', eventId)
-      .eq('student_id', studentId)
-      .single();
+    const existingReg = await Registration.findOne({ event: eventId, student: studentId });
 
     if (existingReg) {
       return res.status(400).json({ message: 'You are already registered for this event' });
     }
 
-    // Insert with extra details
-    const { data: reg, error: regError } = await supabase
-      .from('event_registrations')
-      .insert([{
-        event_id: eventId,
-        student_id: studentId,
-        phone: phone || null,
-        year: year || null,
-        branch: branch || null,
-      }])
-      .select('id')
-      .single();
+    const reg = new Registration({
+      event: eventId,
+      student: studentId,
+      phone,
+      year,
+      branch,
+    });
 
-    if (regError) {
-      console.error('Registration insert error:', regError);
-      throw regError;
+    await reg.save();
+
+    // Add to event's array
+    if (!event.registeredStudents.includes(studentId)) {
+        event.registeredStudents.push(studentId);
+        await event.save();
     }
 
-    res.json({ message: `Successfully registered for "${event.title}"! 🎉`, registrationId: reg.id });
+    // Send confirmation email to student
+    const student = await Student.findById(studentId);
+    if (student && student.email) {
+      sendEmail({
+        to_name: student.name,
+        to_email: student.email,
+        message: `Congratulations! You have successfully registered for the event "${event.title}". We look forward to seeing you there!`
+      }).catch(err => console.error("Failed to send registration confirmation email:", err));
+    }
+
+    res.json({ message: `Successfully registered for "${event.title}"! 🎉`, registrationId: reg._id });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error while registering for event' });
@@ -264,23 +239,20 @@ router.get('/student/:studentId/registered', async (req, res) => {
   try {
     const { studentId } = req.params;
 
-    const { data: registrations, error } = await supabase
-      .from('event_registrations')
-      .select('id, registered_at, phone, year, branch, event:events(id, title, domain, date, time, location, description, status, reg_fee, club:clubs(name))')
-      .eq('student_id', studentId)
-      .order('registered_at', { ascending: false });
+    const registrations = await Registration.find({ student: studentId })
+        .populate({
+            path: 'event',
+            populate: { path: 'club' }
+        })
+        .sort({ createdAt: -1 });
 
-    if (error) throw error;
-
-    // Shape the response
-    const registeredEvents = (registrations || []).map(r => ({
-      registrationId: r.id,
-      registeredAt: r.registered_at,
+    const registeredEvents = registrations.map(r => ({
+      registrationId: r._id,
+      registeredAt: r.createdAt,
       phone: r.phone,
       year: r.year,
       branch: r.branch,
-      ...r.event,
-      _id: r.event?.id,
+      ...r.event.toObject(),
     }));
 
     res.json(registeredEvents);
@@ -294,29 +266,14 @@ router.get('/student/:studentId/registered', async (req, res) => {
 // Club - Get all events for this club (any status) with registration counts
 router.get('/club/:clubId', async (req, res) => {
   try {
-    const { data: events, error } = await supabase
-      .from('events')
-      .select('*, _id:id, regFee:reg_fee, clubId:club_id, expectedAudience:expected_audience')
-      .eq('club_id', req.params.clubId)
-      .order('created_at', { ascending: false });
+    const events = await Event.find({ club: req.params.clubId }).sort({ createdAt: -1 });
 
-    if (error) throw error;
-
-    // Attach registration count to each event
-    const eventIds = events.map(e => e.id);
-    const { data: regCounts } = await supabase
-      .from('event_registrations')
-      .select('event_id')
-      .in('event_id', eventIds);
-
-    const countMap = {};
-    (regCounts || []).forEach(r => {
-      countMap[r.event_id] = (countMap[r.event_id] || 0) + 1;
-    });
-
-    const eventsWithCounts = events.map(e => ({
-      ...e,
-      registration_count: countMap[e.id] || 0,
+    const eventsWithCounts = await Promise.all(events.map(async (e) => {
+        const count = await Registration.countDocuments({ event: e._id });
+        return {
+            ...e.toObject(),
+            registration_count: count,
+        };
     }));
 
     res.json(eventsWithCounts);
@@ -329,21 +286,14 @@ router.get('/club/:clubId', async (req, res) => {
 // Club - Get all registered participants for an event
 router.get('/:id/participants', async (req, res) => {
   try {
-    const { data: registrations, error } = await supabase
-      .from('event_registrations')
-      .select('id, registered_at, phone, year, branch, student_id, is_checked_in, checked_in_at, student:students(id, name, email, department, rollNumber:roll_number)')
-      .eq('event_id', req.params.id)
-      .order('registered_at', { ascending: false });
+    const registrations = await Registration.find({ event: req.params.id })
+        .populate('student')
+        .sort({ createdAt: -1 });
 
-    if (error) {
-      console.error('Participants Supabase error:', JSON.stringify(error));
-      throw error;
-    }
-
-    const participants = (registrations || []).map(r => ({
-      registrationId: r.id,
-      registeredAt: r.registered_at,
-      studentId: r.student_id,
+    const participants = registrations.map(r => ({
+      registrationId: r._id,
+      registeredAt: r.createdAt,
+      studentId: r.student?._id,
       name: r.student?.name || 'Unknown',
       email: r.student?.email || 'N/A',
       department: r.student?.department || 'N/A',
@@ -351,8 +301,8 @@ router.get('/:id/participants', async (req, res) => {
       phone: r.phone || 'N/A',
       year: r.year || 'N/A',
       branch: r.branch || 'N/A',
-      isCheckedIn: r.is_checked_in || false,
-      checkedInAt: r.checked_in_at,
+      isCheckedIn: r.isCheckedIn || false,
+      checkedInAt: r.checkedInAt,
     }));
 
     res.json({ count: participants.length, participants });
@@ -370,32 +320,19 @@ router.post('/:id/check-in', async (req, res) => {
 
     if (!studentId) return res.status(400).json({ message: 'Student ID required' });
 
-    // 1. Verify registration exists
-    const { data: reg, error: fetchErr } = await supabase
-      .from('event_registrations')
-      .select('id, is_checked_in')
-      .eq('event_id', eventId)
-      .eq('student_id', studentId)
-      .single();
+    const reg = await Registration.findOne({ event: eventId, student: studentId });
 
-    if (fetchErr || !reg) {
+    if (!reg) {
       return res.status(404).json({ message: 'Registration not found for this student and event' });
     }
 
-    if (reg.is_checked_in) {
+    if (reg.isCheckedIn) {
       return res.status(400).json({ message: 'Student already checked in' });
     }
 
-    // 2. Update status
-    const { error: updateErr } = await supabase
-      .from('event_registrations')
-      .update({
-        is_checked_in: true,
-        checked_in_at: new Date().toISOString()
-      })
-      .eq('id', reg.id);
-
-    if (updateErr) throw updateErr;
+    reg.isCheckedIn = true;
+    reg.checkedInAt = new Date();
+    await reg.save();
 
     res.json({ message: 'Check-in successful! ✅' });
   } catch (error) {
@@ -404,17 +341,12 @@ router.post('/:id/check-in', async (req, res) => {
   }
 });
 
-
-
 // Delete an event (Club)
 router.delete('/:id', async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from('events')
-      .delete()
-      .eq('id', req.params.id);
-
-    if (error) throw error;
+    await Event.findByIdAndDelete(req.params.id);
+    // Also delete registrations
+    await Registration.deleteMany({ event: req.params.id });
     res.json({ message: 'Event deleted successfully' });
   } catch (error) {
     console.error(error);
@@ -423,3 +355,4 @@ router.delete('/:id', async (req, res) => {
 });
 
 module.exports = router;
+

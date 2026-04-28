@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const supabase = require('../utils/supabase');
+const Admin = require('../models/Admin');
 
 const router = express.Router();
 
@@ -10,13 +10,9 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const { data: admin, error } = await supabase
-      .from('admins')
-      .select('*')
-      .eq('email', email)
-      .single();
+    const admin = await Admin.findOne({ email });
 
-    if (error || !admin) {
+    if (!admin) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
@@ -27,7 +23,7 @@ router.post('/login', async (req, res) => {
 
     const payload = {
       user: {
-        id: admin.id,
+        id: admin._id,
         role: 'admin',
       }
     };
@@ -41,7 +37,7 @@ router.post('/login', async (req, res) => {
         res.json({
           token,
           user: {
-            id: admin.id,
+            id: admin._id,
             name: admin.name,
             email: admin.email,
             role: 'admin',
@@ -56,3 +52,4 @@ router.post('/login', async (req, res) => {
 });
 
 module.exports = router;
+

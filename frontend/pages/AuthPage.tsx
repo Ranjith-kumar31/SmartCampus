@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { GraduationCap, Building2, UserCog, ShieldCheck, Mail, Lock, ArrowRight, Hash, Upload, FileText, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from 'axios';
+import ForgotPassword from '../components/ForgotPassword';
 
 const api = axios.create({ baseURL: 'http://localhost:5000/api' });
 
@@ -11,6 +12,7 @@ const AuthPage = () => {
   const { type } = useParams();
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -104,19 +106,33 @@ const AuthPage = () => {
     }
   };
 
+  if (showForgotPassword) {
+    return (
+      <div className="flex items-center justify-center min-h-[85vh] px-4 py-20 bg-slate-50 dark:bg-dark">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <ForgotPassword onBack={() => setShowForgotPassword(false)} />
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex items-center justify-center min-h-[85vh] px-4 py-20 bg-slate-50">
+    <div className="flex items-center justify-center min-h-[85vh] px-4 py-20 bg-slate-50 dark:bg-dark">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-lg bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-slate-100 p-10 md:p-14 relative overflow-hidden"
+        className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-slate-100 dark:border-slate-800 p-10 md:p-14 relative overflow-hidden"
       >
         <div className="flex flex-col items-center mb-12 relative z-10">
-          <div className="bg-primary/5 p-5 rounded-3xl mb-6 border border-primary/10">
-            <Icon className={`w-10 h-10 text-primary`} />
+          <div className="bg-primary/5 dark:bg-white/5 p-5 rounded-3xl mb-6 border border-primary/10 dark:border-white/10">
+            <Icon className={`w-10 h-10 text-primary dark:text-white`} />
           </div>
-          <h2 className="text-4xl font-extrabold text-primary mb-3">
+          <h2 className="text-4xl font-extrabold text-primary dark:text-white mb-3">
             {isLogin ? 'Welcome Back' : 'Get Started'}
           </h2>
           <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-secondary/10 border border-secondary/20 self-center">
@@ -216,7 +232,18 @@ const AuthPage = () => {
           </div>
 
           <div>
-            <label className="form-label">Password</label>
+            <div className="flex justify-between items-center mb-2">
+              <label className="form-label mb-0">Password</label>
+              {isLogin && (
+                <button 
+                  type="button" 
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-sm font-bold text-primary hover:underline"
+                >
+                  Forgot Password?
+                </button>
+              )}
+            </div>
             <div className="relative">
               <input 
                 type={showPassword ? "text" : "password"} 

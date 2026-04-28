@@ -51,7 +51,7 @@ const EventsPage = () => {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50 pt-32 pb-24">
+    <div className="min-h-screen bg-slate-50 dark:bg-dark pt-32 pb-24">
       <div className="container mx-auto px-6 md:px-12">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
@@ -68,7 +68,7 @@ const EventsPage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-4xl md:text-6xl font-black text-primary tracking-tight"
+              className="text-4xl md:text-6xl font-black text-primary dark:text-white tracking-tight"
             >
               Explore <span className="text-secondary italic">Opportunities</span>
             </motion.h1>
@@ -88,7 +88,7 @@ const EventsPage = () => {
               <input 
                 type="text" 
                 placeholder="Search cluster..."
-                className="pl-12 pr-6 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-primary focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all w-full sm:w-64"
+                className="pl-12 pr-6 py-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-bold text-primary dark:text-white focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all w-full sm:w-64"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -105,7 +105,7 @@ const EventsPage = () => {
               className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
                 selectedDomain === domain
                   ? 'bg-primary text-white border-primary shadow-xl shadow-primary/20'
-                  : 'bg-white text-slate-400 border-slate-100 hover:bg-slate-50'
+                  : 'bg-white dark:bg-slate-900 text-slate-400 border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
               }`}
             >
               {domain} {domain === 'All' ? 'Events' : 'Sector'}
