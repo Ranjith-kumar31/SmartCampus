@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { LayoutDashboard, CalendarPlus, Users, QrCode, BarChart2, Settings, PlusCircle, Trash2, Clock, MapPin, CalendarDays, IndianRupee, X, TrendingUp, ChevronRight, BadgeCheck, ShieldCheck, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import QrScanner from 'react-qr-scanner';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../components/layouts/DashboardLayout';
@@ -200,9 +199,8 @@ const ClubDashboard = () => {
   };
 
   const handleLiveScan = (data: any) => {
-    if (data && data.text) {
-      processScanData(data.text);
-    }
+    const text = typeof data === 'string' ? data : data?.text;
+    if (text) processScanData(text);
   };
 
   const handleScanError = (err: any) => {
@@ -639,13 +637,8 @@ const ClubDashboard = () => {
                      <div className="absolute bottom-0 left-0 w-12 h-12 border-b-4 border-l-4 border-primary rounded-bl-2xl" />
                      <div className="absolute bottom-0 right-0 w-12 h-12 border-b-4 border-r-4 border-primary rounded-br-2xl" />
                      {scannerEventId ? (
-                        <div className="absolute inset-0 p-4">
-                           <QrScanner
-                             delay={1000}
-                             onError={handleScanError}
-                             onScan={handleLiveScan}
-                             style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '1rem' }}
-                           />
+                        <div className="absolute inset-0 p-2">
+                           <Html5QrScanner onScan={handleLiveScan} />
                         </div>
                      ) : (
                         <>
@@ -1036,6 +1029,46 @@ const FormSection = ({ icon, title, children }: { icon: string; title: string; c
         {children}
       </div>
     </div>
+  );
+};
+
+/* ── Html5QrScanner: Camera-based QR scanner using html5-qrcode ── */
+const Html5QrScanner = ({ onScan }: { onScan: (text: string) => void }) => {
+  const scannerRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let scanner: any;
+    const startScanner = async () => {
+      const { Html5Qrcode } = await import('html5-qrcode');
+      if (!containerRef.current) return;
+      scanner = new Html5Qrcode('qr-reader-container');
+      scannerRef.current = scanner;
+      try {
+        await scanner.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 200, height: 200 } },
+          (decodedText: string) => { onScan(decodedText); },
+          () => {}
+        );
+      } catch (err) {
+        console.error('Camera start failed:', err);
+      }
+    };
+    startScanner();
+    return () => {
+      if (scannerRef.current?.isScanning) {
+        scannerRef.current.stop().catch(() => {});
+      }
+    };
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      id="qr-reader-container"
+      style={{ width: '100%', height: '100%', borderRadius: '0.75rem', overflow: 'hidden' }}
+    />
   );
 };
 

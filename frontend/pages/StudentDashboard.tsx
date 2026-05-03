@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Ticket, FileCheck, User, Settings, CalendarDays, MapPin, Clock, Send, X, CheckCircle, XCircle, ChevronRight, Sparkles, Brain, TrendingUp, BadgeCheck, Zap, History } from 'lucide-react';
+import { Home, Ticket, FileCheck, User, Settings, CalendarDays, MapPin, Clock, Send, CheckCircle, XCircle, Sparkles, Brain, TrendingUp, BadgeCheck, Zap } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -128,7 +128,7 @@ const StudentDashboard = () => {
       } else {
         setShowRegModal(false);
         // Paid event — keep existing Razorpay flow
-        await handleRegister(eventId, regFee);
+        await handleRegister(eventId, regFee, regForm);
       }
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to register');
@@ -137,13 +137,32 @@ const StudentDashboard = () => {
     }
   };
 
+  // Utility: Load Razorpay script and return a Promise
+  const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if ((window as any).Razorpay) { resolve(true); return; }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => {
+        toast.error('Failed to load Razorpay. Check your internet connection.');
+        resolve(false);
+      };
+      document.body.appendChild(script);
+    });
+  };
 
-  // Paid event — Razorpay checkout (called from submitRegistration for paid events)
-  const handleRegister = async (eventId: string, regFee: number = 0) => {
+  // Paid event — Razorpay checkout
+  const handleRegister = async (eventId: string, regFee: number = 0, regData: any) => {
     if (!regFee || regFee === 0) return;
     try {
+      toast.loading('Creating payment order...', { id: 'rzp-loading' });
       const orderRes = await api.post('/payments/create-order', { eventId, studentId: user.id });
       const { orderId, amount, currency, keyId, eventTitle } = orderRes.data;
+      toast.dismiss('rzp-loading');
+
+      const loaded = await loadRazorpayScript();
+      if (!loaded) return;
 
       const options = {
         key: keyId,
@@ -160,6 +179,9 @@ const StudentDashboard = () => {
               razorpay_signature: response.razorpay_signature,
               eventId,
               studentId: user.id,
+              phone: regData?.phone,
+              year: regData?.year,
+              branch: regData?.branch,
             });
             toast.success('Payment successful! Registration confirmed 🎉');
             fetchEvents();
@@ -174,17 +196,11 @@ const StudentDashboard = () => {
         modal: { ondismiss: () => toast('Payment cancelled.', { icon: '⚠️' }) },
       };
 
-      if (!(window as any).Razorpay) {
-        const script = document.createElement('script');
-        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-        script.onload = () => { const rzp = new (window as any).Razorpay(options); rzp.open(); };
-        document.body.appendChild(script);
-      } else {
-        const rzp = new (window as any).Razorpay(options);
-        rzp.open();
-      }
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Payment initiation failed');
+      toast.dismiss('rzp-loading');
+      toast.error(err.response?.data?.message || 'Payment initiation failed. Is the server running?');
     }
   };
 
@@ -373,7 +389,7 @@ const StudentDashboard = () => {
                         </div>
 
                         <button
-                          onClick={() => handleRegister(item.event._id)}
+                          onClick={() => openRegModal(item.event)}
                           className="w-full py-5 bg-primary hover:bg-slate-800 text-white text-base font-black rounded-3xl transition-all shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98]"
                         >
                           Confirm Participation
@@ -889,8 +905,6 @@ const ProfileInfoItem = ({ label, value, icon }: { label: string; value: string;
   </div>
 );
 
-const HistoryIcon = () => (
-  <History className="w-4 h-4 text-emerald-400" />
-);
+
 
 export default StudentDashboard;

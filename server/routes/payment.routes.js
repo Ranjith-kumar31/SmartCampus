@@ -3,6 +3,7 @@ const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const Event = require('../models/Event');
 const Registration = require('../models/Registration');
+const QRCode = require('qrcode');
 
 const router = express.Router();
 
@@ -66,6 +67,9 @@ router.post('/verify', async (req, res) => {
       razorpay_signature,
       eventId,
       studentId,
+      phone,
+      year,
+      branch
     } = req.body;
 
     const body = razorpay_order_id + '|' + razorpay_payment_id;
@@ -87,12 +91,18 @@ router.post('/verify', async (req, res) => {
     const registration = new Registration({
         event: eventId,
         student: studentId,
+        phone,
+        year,
+        branch
     });
+
+    const qrData = `EVT-${eventId.toString()}-STU-${studentId.toString()}`;
+    registration.qrCode = await QRCode.toDataURL(qrData);
 
     await registration.save();
     
     // Also update Event array
-    await Event.findByIdAndUpdate(eventId, { $addToSet: { registeredStudents: studentId } });
+    await Event.findByIdAndUpdate(eventId, { $addToSet: { registeredStudents: studentId }, $inc: { registration_count: 1 } });
 
     res.json({
       message: 'Payment verified and registration successful!',

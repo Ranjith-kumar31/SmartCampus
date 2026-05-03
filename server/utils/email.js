@@ -1,28 +1,43 @@
-const emailjs = require('@emailjs/nodejs');
 const nodemailer = require('nodemailer');
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD
+  }
+});
+
 /**
- * Sends an email using EmailJS Node.js SDK
- * @param {Object} templateParams - The parameters required for your specific EmailJS template
- * @param {string} templateParams.to_name - Name of receiver
- * @param {string} templateParams.to_email - Email address of receiver 
- * @param {string} templateParams.message - Email content
+ * Sends a generic email using Nodemailer
+ * @param {Object} options - Email options
+ * @param {string} options.to_name - Name of receiver
+ * @param {string} options.to_email - Email address of receiver 
+ * @param {string} options.message - Email content
  */
-const sendEmail = async (templateParams) => {
+const sendEmail = async ({ to_name, to_email, message }) => {
   try {
-    const response = await emailjs.send(
-      process.env.EMAILJS_SERVICE_ID,
-      process.env.EMAILJS_TEMPLATE_ID,
-      templateParams,
-      {
-        publicKey: process.env.EMAILJS_PUBLIC_KEY,
-        privateKey: process.env.EMAILJS_PRIVATE_KEY,
-      }
-    );
-    
-    console.log('Email sent successfully!', response.status, response.text);
+    const mailOptions = {
+      from: `"Smart Campus" <${process.env.GMAIL_USER}>`,
+      to: to_email,
+      subject: "Smart Campus - Important Notification",
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+          <h2 style="color: #4F46E5; text-align: center;">Smart Campus Notification</h2>
+          <p>Dear ${to_name},</p>
+          <p style="white-space: pre-wrap;">${message}</p>
+          <br/>
+          <p>Best Regards,</p>
+          <p><strong>Smart Campus Team</strong></p>
+        </div>
+      `
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully!', info.messageId);
     return true;
   } catch (error) {
-    console.error('EmailJS sending failed:', error);
+    console.error('Email sending failed:', error);
     return false;
   }
 };
@@ -34,14 +49,6 @@ const sendEmail = async (templateParams) => {
  */
 const sendWelcomeEmail = async (email, name) => {
   try {
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD
-      }
-    });
-
     const mailOptions = {
       from: `"Smart Campus" <${process.env.GMAIL_USER}>`,
       to: email,
