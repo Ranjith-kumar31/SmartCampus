@@ -5,6 +5,8 @@ const Club = require('../models/Club');
 const Student = require('../models/Student');
 const { verifyToken, isAdmin, isHOD } = require('../middleware/auth');
 const { sendEmail } = require('../utils/email');
+const QRCode = require('qrcode');
+const ODRequest = require('../models/ODRequest');
 
 const router = express.Router();
 
@@ -209,6 +211,10 @@ router.post('/:id/register', async (req, res) => {
       branch,
     });
 
+    // Generate QR Code containing the studentId and eventId in the standard format
+    const qrData = `EVT-${eventId.toString()}-STU-${studentId.toString()}`;
+    reg.qrCode = await QRCode.toDataURL(qrData);
+
     await reg.save();
 
     // Add to event's array
@@ -252,6 +258,7 @@ router.get('/student/:studentId/registered', async (req, res) => {
       phone: r.phone,
       year: r.year,
       branch: r.branch,
+      qrCode: r.qrCode, // Include QR code so student can view it
       ...r.event.toObject(),
     }));
 
@@ -334,7 +341,19 @@ router.post('/:id/check-in', async (req, res) => {
     reg.checkedInAt = new Date();
     await reg.save();
 
-    res.json({ message: 'Check-in successful! ✅' });
+    // Auto-create OD Request for the student!
+    const existingOD = await ODRequest.findOne({ student: studentId, event: eventId });
+    if (!existingOD) {
+      const newOD = new ODRequest({
+        student: studentId,
+        event: eventId,
+        status: 'Pending',
+        reason: 'Auto-generated upon QR check-in at the event.'
+      });
+      await newOD.save();
+    }
+
+    res.json({ message: 'Check-in successful! OD Request forwarded to HOD. ✅' });
   } catch (error) {
     console.error('Check-in error:', error);
     res.status(500).json({ message: 'Server error during check-in' });

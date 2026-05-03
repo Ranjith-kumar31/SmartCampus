@@ -12,6 +12,7 @@ import ClubDashboard from './pages/ClubDashboard';
 
 import HODdashboard from './pages/HODdashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 import EventDetailsPage from './pages/EventDetailsPage';
 import EventsPage from './pages/EventsPage';
@@ -40,6 +41,9 @@ function App() {
           <Route path="auth/:type" element={<AuthPage />} />
           <Route path="events/:id" element={<EventDetailsPage />} />
         </Route>
+
+        {/* Password Reset Route (independent of layout) */}
+        <Route path="reset-password" element={<ResetPasswordPage />} />
 
         {/* Dashboard routes — use their own DashboardLayout */}
         <Route path="student/dashboard" element={<StudentDashboard />} />

@@ -8,6 +8,7 @@ const registrationSchema = new mongoose.Schema({
   branch: { type: String },
   isCheckedIn: { type: Boolean, default: false },
   checkedInAt: { type: Date },
+  qrCode: { type: String },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Registration', registrationSchema);

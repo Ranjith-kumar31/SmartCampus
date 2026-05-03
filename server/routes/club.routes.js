@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const Club = require('../models/Club');
 const { verifyToken, isAdmin } = require('../middleware/auth');
+const { sendWelcomeEmail } = require('../utils/email');
 
 const router = express.Router();
 
@@ -158,6 +159,10 @@ router.patch('/:id/status', verifyToken, isAdmin, async (req, res) => {
 
     if (!club) {
       return res.status(404).json({ message: `Club not found.` });
+    }
+
+    if (status === 'Approved') {
+      sendWelcomeEmail(club.email, club.name).catch(err => console.error("Failed to send welcome email to club:", err));
     }
 
     res.json({ message: `Club "${club.name}" ${status} successfully`, club });

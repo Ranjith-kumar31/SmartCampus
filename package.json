@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@babel/runtime": "^7.29.2",
     "@portabletext/react": "^6.0.3",
     "@types/qrcode.react": "^1.0.5",
     "autoprefixer": "^10.4.27",

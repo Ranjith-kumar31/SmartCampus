@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { LayoutDashboard, CalendarPlus, Users, QrCode, BarChart2, Settings, PlusCircle, Trash2, Clock, MapPin, CalendarDays, IndianRupee, X, TrendingUp, ChevronRight, BadgeCheck, ShieldCheck, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import QrScanner from 'react-qr-scanner';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../components/layouts/DashboardLayout';
@@ -139,10 +140,9 @@ const ClubDashboard = () => {
     catch (err: any) { toast.error(err.response?.data?.message || 'Failed to delete event'); }
   };
 
-  /* ── QR scan simulation: match ticket string "EVT-<evtId>-STU-<stuId>" ── */
-  const handleManualScan = async () => {
-    if (!manualTicket.trim()) { toast.error('Enter a ticket ID'); return; }
-    const parts = manualTicket.trim().split('-STU-');
+  const processScanData = async (ticketData: string) => {
+    if (!ticketData.trim()) return;
+    const parts = ticketData.trim().split('-STU-');
     if (parts.length !== 2 || !parts[0].startsWith('EVT-')) {
       toast.error('Invalid ticket format. Expected: EVT-<eventId>-STU-<studentId>');
       return;
@@ -164,7 +164,7 @@ const ClubDashboard = () => {
     }
 
     if (participant.isCheckedIn) {
-      toast('Already checked in!', { icon: '⚠️' });
+      toast('Already checked in!', { icon: '⚠️', id: `dup-${studentId}` });
       return;
     }
 
@@ -192,6 +192,21 @@ const ClubDashboard = () => {
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Check-in failed');
     }
+  };
+
+  const handleManualScan = async () => {
+    if (!manualTicket.trim()) { toast.error('Enter a ticket ID'); return; }
+    await processScanData(manualTicket);
+  };
+
+  const handleLiveScan = (data: any) => {
+    if (data && data.text) {
+      processScanData(data.text);
+    }
+  };
+
+  const handleScanError = (err: any) => {
+    console.error('Scan error:', err);
   };
 
   /* ── Derived data ── */
@@ -623,11 +638,24 @@ const ClubDashboard = () => {
                      <div className="absolute top-0 right-0 w-12 h-12 border-t-4 border-r-4 border-primary rounded-tr-2xl" />
                      <div className="absolute bottom-0 left-0 w-12 h-12 border-b-4 border-l-4 border-primary rounded-bl-2xl" />
                      <div className="absolute bottom-0 right-0 w-12 h-12 border-b-4 border-r-4 border-primary rounded-br-2xl" />
-                     <div className="absolute top-0 left-0 w-full h-1 bg-secondary shadow-[0_0_20px_rgba(0,174,239,1)] animate-[scan_3s_infinite]" />
-                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 opacity-20 group-hover:opacity-40 transition-opacity">
-                        <QrCode className="w-20 h-20 text-primary mb-4" />
-                        <p className="text-[10px] font-black text-primary uppercase tracking-widest">Awaiting Identity Token</p>
-                     </div>
+                     {scannerEventId ? (
+                        <div className="absolute inset-0 p-4">
+                           <QrScanner
+                             delay={1000}
+                             onError={handleScanError}
+                             onScan={handleLiveScan}
+                             style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '1rem' }}
+                           />
+                        </div>
+                     ) : (
+                        <>
+                           <div className="absolute top-0 left-0 w-full h-1 bg-secondary shadow-[0_0_20px_rgba(0,174,239,1)] animate-[scan_3s_infinite]" />
+                           <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 opacity-20 group-hover:opacity-40 transition-opacity">
+                              <QrCode className="w-20 h-20 text-primary mb-4" />
+                              <p className="text-[10px] font-black text-primary uppercase tracking-widest">Awaiting Identity Token</p>
+                           </div>
+                        </>
+                     )}
                   </div>
                   <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-primary/90 backdrop-blur-xl px-8 py-3 rounded-full border border-white/20 shadow-2xl flex items-center gap-4">
                      <div className={`w-2.5 h-2.5 rounded-full ${scannerEventId ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />

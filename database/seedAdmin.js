@@ -27,7 +27,7 @@ async function seedAdmin() {
 
     const { error } = await supabase.from('admins').insert([{
       name: 'Vishnu Selvam',
-      email: 'admin@smartcampus.edu',
+      email: 'adminsmartcampus@gmail.com',
       password: hashedPassword
     }]);
 
@@ -37,8 +37,8 @@ async function seedAdmin() {
     console.log('│           ADMIN ACCOUNT CREATED ✅            │');
     console.log('├──────────────────────────────────────────────┤');
     console.log('│  Name     : Vishnu Selvam                     │');
-    console.log('│  Email    : admin@smartcampus.edu             │');
-    console.log('│  Password : Admin@Vishnu2026                  │');
+    console.log('│  Email    : adminsmartcampus@gmail.com             │');
+    console.log('│  Password : Admin@Smart2026                  │');
     console.log('│  Role     : System Administrator              │');
     console.log('└──────────────────────────────────────────────┘\n');
 

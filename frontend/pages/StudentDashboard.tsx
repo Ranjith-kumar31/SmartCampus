@@ -202,19 +202,19 @@ const StudentDashboard = () => {
   // Set of registered event IDs for O(1) lookup
   const registeredEventIds = new Set(registeredEvents.map(e => e.id || e._id));
 
-const categoryColors: Record<string, string> = {
-  'AI & ML': 'bg-primary',
-  'AI & DS': 'bg-secondary',
-  'Web Development': 'bg-cyan-500',
-  'Cybersecurity': 'bg-rose-500',
-  'Robotics': 'bg-amber-500',
-  'Cultural': 'bg-pink-500',
-  'Sports': 'bg-emerald-500',
-  'General': 'bg-slate-600',
-  'Technology': 'bg-primary',
-  'Design': 'bg-secondary',
-  'Music': 'bg-purple-500',
-};
+  const categoryColors: Record<string, string> = {
+    'AI & ML': 'bg-primary',
+    'AI & DS': 'bg-secondary',
+    'Web Development': 'bg-cyan-500',
+    'Cybersecurity': 'bg-rose-500',
+    'Robotics': 'bg-amber-500',
+    'Cultural': 'bg-pink-500',
+    'Sports': 'bg-emerald-500',
+    'General': 'bg-slate-600',
+    'Technology': 'bg-primary',
+    'Design': 'bg-secondary',
+    'Music': 'bg-purple-500',
+  };
 
   return (
     <DashboardLayout
@@ -274,7 +274,7 @@ const categoryColors: Record<string, string> = {
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
-                         <TrendingUp className="w-5 h-5 text-emerald-600" />
+                        <TrendingUp className="w-5 h-5 text-emerald-600" />
                       </div>
                       <span className="text-primary font-black tracking-tight">OD Success Probability</span>
                     </div>
@@ -294,8 +294,8 @@ const categoryColors: Record<string, string> = {
                     <div className={`w-2 h-2 rounded-full ${aiSuggestions.odApprovalRate >= 70 ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                     <p className="text-slate-500 text-sm font-bold">
                       {aiSuggestions.odApprovalRate >= 70 ? 'HOD is favorable towards current event domains.' :
-                       aiSuggestions.odApprovalRate >= 40 ? 'Moderate approval probability. Keep your reason concise.' :
-                       'Current department policy is tight. Ensure your OD reason is critical.'}
+                        aiSuggestions.odApprovalRate >= 40 ? 'Moderate approval probability. Keep your reason concise.' :
+                          'Current department policy is tight. Ensure your OD reason is critical.'}
                     </p>
                   </div>
                 </div>
@@ -303,7 +303,7 @@ const categoryColors: Record<string, string> = {
                 {/* Recommendation Cards */}
                 <div>
                   <h3 className="text-primary dark:text-white font-black text-xl mb-6 flex items-center gap-3">
-                    <Zap className="w-5 h-5 text-amber-500 fill-amber-500" /> 
+                    <Zap className="w-5 h-5 text-amber-500 fill-amber-500" />
                     Tailored Opportunities
                   </h3>
                   <div className="space-y-6">
@@ -325,16 +325,15 @@ const categoryColors: Record<string, string> = {
                           <div className="flex-1">
                             <div className="flex flex-wrap items-center gap-3 mb-3">
                               <h4 className="text-primary font-black text-2xl tracking-tight leading-none group-hover:text-primary transition-colors">{item.event.title}</h4>
-                              <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${
-                                item.matchColor === 'emerald' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
-                                item.matchColor === 'indigo' ? 'bg-primary/5 text-primary border border-primary/10' :
-                                item.matchColor === 'amber' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-slate-50 text-slate-400 border border-slate-100'
-                              }`}>{item.matchLabel}</span>
+                              <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${item.matchColor === 'emerald' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                                  item.matchColor === 'indigo' ? 'bg-primary/5 text-primary border border-primary/10' :
+                                    item.matchColor === 'amber' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-slate-50 text-slate-400 border border-slate-100'
+                                }`}>{item.matchLabel}</span>
                             </div>
                             <div className="flex items-center gap-3 text-slate-400 text-xs font-bold font-mono">
-                               <span>{item.event.club?.name}</span>
-                               <span className="w-1.5 h-1.5 rounded-full bg-slate-200" />
-                               <span>{item.event.domain}</span>
+                              <span>{item.event.club?.name}</span>
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-200" />
+                              <span>{item.event.domain}</span>
                             </div>
                           </div>
                           <div className="bg-primary/5 p-4 rounded-3xl border border-primary/10 text-center min-w-[100px] shrink-0">
@@ -346,11 +345,11 @@ const categoryColors: Record<string, string> = {
                         {/* Top Reason Highlight */}
                         <div className="flex items-start gap-4 bg-slate-50 rounded-2xl p-5 mb-6 border border-slate-100">
                           <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shrink-0 shadow-sm">
-                             <BadgeCheck className="w-6 h-6 text-primary" />
+                            <BadgeCheck className="w-6 h-6 text-primary" />
                           </div>
                           <div>
-                             <p className="text-primary font-black text-sm mb-1 leading-none">Why we picked this:</p>
-                             <p className="text-slate-500 text-sm font-medium leading-tight">{item.topReason}</p>
+                            <p className="text-primary font-black text-sm mb-1 leading-none">Why we picked this:</p>
+                            <p className="text-slate-500 text-sm font-medium leading-tight">{item.topReason}</p>
                           </div>
                         </div>
 
@@ -368,10 +367,9 @@ const categoryColors: Record<string, string> = {
                           <span className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg">
                             {item.event.regFee === 0 ? '🆓 FREE ENTRY' : `₹${item.event.regFee}`}
                           </span>
-                          <span className={`ml-auto font-black px-4 py-1.5 rounded-2xl border ${
-                            item.odProbability >= 70 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                            item.odProbability >= 40 ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-red-50 text-red-600 border-red-100'
-                          }`}>OD PROBABILITY: {item.odProbability}%</span>
+                          <span className={`ml-auto font-black px-4 py-1.5 rounded-2xl border ${item.odProbability >= 70 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                              item.odProbability >= 40 ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-red-50 text-red-600 border-red-100'
+                            }`}>OD PROBABILITY: {item.odProbability}%</span>
                         </div>
 
                         <button
@@ -388,7 +386,7 @@ const categoryColors: Record<string, string> = {
             ) : (
               <div className="dashboard-card p-20 text-center rounded-[3rem]">
                 <div className="w-24 h-24 bg-primary/5 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
-                   <p className="text-5xl">🤖</p>
+                  <p className="text-5xl">🤖</p>
                 </div>
                 <h3 className="text-primary font-black text-2xl mb-2">Initialize Your Insights</h3>
                 <p className="text-slate-500 font-medium max-w-sm mx-auto mb-8">Click below to generate personalized event trajectories based on your profile.</p>
@@ -400,7 +398,7 @@ const categoryColors: Record<string, string> = {
           </div>
         )}
 
-        
+
         {/* ===== EVENTS TAB ===== */}
         {activeTab === 'events' && (
           <div className="space-y-8 pb-10">
@@ -410,11 +408,11 @@ const categoryColors: Record<string, string> = {
                 <p className="text-slate-500 dark:text-slate-400 font-medium">Discover and participate in college activities</p>
               </div>
               <div className="flex items-center gap-2">
-                 <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Sort:</span>
-                 <select className="bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/20">
-                    <option>Newest First</option>
-                    <option>Date Ascending</option>
-                 </select>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Sort:</span>
+                <select className="bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/20">
+                  <option>Newest First</option>
+                  <option>Date Ascending</option>
+                </select>
               </div>
             </div>
 
@@ -447,7 +445,7 @@ const categoryColors: Record<string, string> = {
                       <div className={`h-24 ${categoryColors[event.domain] || 'bg-slate-600'} relative overflow-hidden group-hover:h-28 transition-all duration-500`}>
                         <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                         <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/30 text-[10px] text-white font-black uppercase tracking-widest">
-                           {event.domain}
+                          {event.domain}
                         </div>
                       </div>
 
@@ -455,43 +453,42 @@ const categoryColors: Record<string, string> = {
                         <div className="bg-white p-5 rounded-3xl shadow-lg shadow-black/5 mb-4 group-hover:translate-y-[-4px] transition-transform">
                           <h3 className="text-primary font-black text-lg leading-tight line-clamp-2">{event.title}</h3>
                           <div className="flex items-center gap-2 mt-2">
-                             <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">{event.club?.name || 'Smart Campus Club'}</p>
+                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">{event.club?.name || 'Smart Campus Club'}</p>
                           </div>
                         </div>
 
                         <div className="space-y-3 mb-6 font-medium">
                           <div className="flex items-center gap-3 text-slate-500 text-sm">
                             <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center shrink-0">
-                               <CalendarDays className="w-4 h-4 text-primary" />
+                              <CalendarDays className="w-4 h-4 text-primary" />
                             </div>
                             <span>{event.date}</span>
                           </div>
                           <div className="flex items-center gap-3 text-slate-500 text-sm">
                             <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center shrink-0">
-                               <MapPin className="w-4 h-4 text-primary" />
+                              <MapPin className="w-4 h-4 text-primary" />
                             </div>
                             <span className="truncate">{event.location?.split(',')[0]}</span>
                           </div>
                         </div>
 
                         <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between gap-4">
-                            <div className="bg-slate-50 dark:bg-slate-800/50 px-4 py-2 rounded-2xl border border-slate-100 dark:border-slate-800">
-                               <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest leading-none mb-1">Fee</p>
-                               <p className="text-sm font-black text-primary dark:text-white leading-none">
-                                 {event.regFee === 0 ? 'FREE' : `₹${event.regFee}`}
-                               </p>
-                            </div>
-                           <button
-                             onClick={() => navigate(`/events/${eId}`)}
-                             className={`flex-1 py-3 text-sm font-black rounded-2xl transition-all ${
-                               isRegistered 
-                               ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
-                               : 'bg-primary text-white hover:bg-slate-800 shadow-lg shadow-primary/20 transition-all active:scale-95'
-                             }`}
-                           >
-                             {isRegistered ? 'Registered ✅' : 'Participate →'}
-                           </button>
+                          <div className="bg-slate-50 dark:bg-slate-800/50 px-4 py-2 rounded-2xl border border-slate-100 dark:border-slate-800">
+                            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest leading-none mb-1">Fee</p>
+                            <p className="text-sm font-black text-primary dark:text-white leading-none">
+                              {event.regFee === 0 ? 'FREE' : `₹${event.regFee}`}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => navigate(`/events/${eId}`)}
+                            className={`flex-1 py-3 text-sm font-black rounded-2xl transition-all ${isRegistered
+                                ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                                : 'bg-primary text-white hover:bg-slate-800 shadow-lg shadow-primary/20 transition-all active:scale-95'
+                              }`}
+                          >
+                            {isRegistered ? 'Registered ✅' : 'Participate →'}
+                          </button>
                         </div>
                       </div>
                     </motion.div>
@@ -533,7 +530,7 @@ const categoryColors: Record<string, string> = {
                 <h2 className="text-primary dark:text-white font-black text-2xl tracking-tight">OD Request History</h2>
                 <p className="text-slate-500 dark:text-slate-400 font-medium">Status of your On-Duty applications</p>
               </div>
-              <button 
+              <button
                 onClick={() => setShowOdModal(true)}
                 className="bg-primary hover:bg-slate-800 text-white font-black px-6 py-3 rounded-2xl transition-all shadow-lg shadow-primary/20 flex items-center gap-2"
               >
@@ -591,7 +588,7 @@ const categoryColors: Record<string, string> = {
                     </div>
                     <h3 className="text-primary text-2xl font-black tracking-tight">{user.name}</h3>
                     <p className="text-slate-400 font-black text-[10px] uppercase tracking-[0.3em] mt-2 mb-8 leading-none">Verified Student</p>
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                         <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1">Passes</p>
@@ -605,14 +602,14 @@ const categoryColors: Record<string, string> = {
                   </div>
 
                   <div className="dashboard-card p-8 rounded-[2rem] border-slate-100">
-                     <h4 className="text-primary font-black text-xs uppercase tracking-widest mb-6">Social Credibility</h4>
-                     <div className="flex items-center justify-between mb-4">
-                        <span className="text-slate-400 text-sm font-bold">Contribution Score</span>
-                        <span className="text-primary font-black text-lg">942</span>
-                     </div>
-                     <div className="w-full bg-slate-50 h-2 rounded-full overflow-hidden">
-                        <div className="w-[85%] h-full bg-primary" />
-                     </div>
+                    <h4 className="text-primary font-black text-xs uppercase tracking-widest mb-6">Social Credibility</h4>
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-slate-400 text-sm font-bold">Contribution Score</span>
+                      <span className="text-primary font-black text-lg">942</span>
+                    </div>
+                    <div className="w-full bg-slate-50 h-2 rounded-full overflow-hidden">
+                      <div className="w-[85%] h-full bg-primary" />
+                    </div>
                   </div>
                 </div>
 
@@ -628,10 +625,10 @@ const categoryColors: Record<string, string> = {
                   {/* Upcoming vs Past Tabs inside profile */}
                   <div className="dashboard-card overflow-hidden rounded-[2.5rem] border-slate-100">
                     <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
-                       <h3 className="text-primary font-black text-sm uppercase tracking-widest">Recent Activity</h3>
-                       <div className="flex gap-4">
-                          <span className="text-xs font-bold text-slate-400">Total: {registeredEvents.length}</span>
-                       </div>
+                      <h3 className="text-primary font-black text-sm uppercase tracking-widest">Recent Activity</h3>
+                      <div className="flex gap-4">
+                        <span className="text-xs font-bold text-slate-400">Total: {registeredEvents.length}</span>
+                      </div>
                     </div>
                     <div className="divide-y divide-slate-100">
                       {upcomingEvents.length === 0 && pastEvents.length === 0 ? (
@@ -648,9 +645,8 @@ const categoryColors: Record<string, string> = {
                                 <p className="text-slate-400 text-xs font-bold mt-0.5">{event.date || event.event?.date}</p>
                               </div>
                             </div>
-                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                              (event.date || event.event?.date) >= today ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
-                            }`}>
+                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${(event.date || event.event?.date) >= today ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
+                              }`}>
                               {(event.date || event.event?.date) >= today ? 'Upcoming' : 'Completed'}
                             </span>
                           </div>
@@ -670,7 +666,7 @@ const categoryColors: Record<string, string> = {
             <h2 className="text-primary font-black text-2xl tracking-tight mb-8">System Preferences</h2>
             <div className="dashboard-card p-20 text-center rounded-[3rem] border-slate-100">
               <div className="w-20 h-20 bg-slate-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
-                 <Settings className="w-10 h-10 text-slate-300" />
+                <Settings className="w-10 h-10 text-slate-300" />
               </div>
               <h3 className="text-primary font-black text-xl">Module Under Maintenance</h3>
               <p className="text-slate-500 font-medium mt-2">Enhanced preference controls are coming in the next update.</p>
@@ -686,9 +682,9 @@ const categoryColors: Record<string, string> = {
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xl"
             onClick={() => setShowOdModal(false)}>
             <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl relative overflow-hidden" 
+              className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl relative overflow-hidden"
               onClick={(e) => e.stopPropagation()}>
-              
+
               <div className="h-2 w-full bg-primary" />
               <button onClick={() => setShowOdModal(false)} className="absolute top-8 right-8 text-slate-400 hover:text-primary transition-colors">
                 <XCircle className="w-8 h-8" />
@@ -696,19 +692,19 @@ const categoryColors: Record<string, string> = {
 
               <div className="p-10">
                 <div className="flex items-center gap-4 mb-8">
-                   <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary text-2xl">
-                      <FileCheck className="w-8 h-8" />
-                   </div>
-                   <div>
-                      <h3 className="text-primary text-2xl font-black tracking-tight">OD Application</h3>
-                      <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Academic Leave Request</p>
-                   </div>
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary text-2xl">
+                    <FileCheck className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h3 className="text-primary text-2xl font-black tracking-tight">OD Application</h3>
+                    <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Academic Leave Request</p>
+                  </div>
                 </div>
 
                 <div className="space-y-6">
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-[0.2em]">Validated Event</label>
-                    <select 
+                    <select
                       className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl px-6 py-4 text-primary dark:text-white font-black text-sm focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all appearance-none cursor-pointer"
                       value={selectedEventForOd} onChange={(e) => setSelectedEventForOd(e.target.value)}>
                       <option value="" disabled>Choose from your registrations</option>
@@ -718,10 +714,10 @@ const categoryColors: Record<string, string> = {
                     </select>
                     {registeredEvents.length === 0 && <p className="text-[10px] text-rose-500 mt-2 font-bold">⚠️ No valid registrations found to claim OD.</p>}
                   </div>
-                  
+
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-[0.2em]">Context / Reason</label>
-                    <textarea className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-6 py-4 text-sm font-bold text-primary dark:text-white focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all resize-none h-32" 
+                    <textarea className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-6 py-4 text-sm font-bold text-primary dark:text-white focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all resize-none h-32"
                       placeholder="Explain your participation role..."
                       value={odReason} onChange={(e) => setOdReason(e.target.value)} />
                   </div>
@@ -745,73 +741,73 @@ const categoryColors: Record<string, string> = {
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xl"
             onClick={() => setShowRegModal(false)}>
             <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[3rem] w-full max-w-lg p-10 relative shadow-2xl overflow-hidden" 
+              className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[3rem] w-full max-w-lg p-10 relative shadow-2xl overflow-hidden"
               onClick={e => e.stopPropagation()}>
-              
+
               <div className={`absolute top-0 left-0 h-2 w-full ${categoryColors[regEventTarget.domain] || 'bg-primary'}`} />
               <button onClick={() => setShowRegModal(false)} className="absolute top-8 right-8 p-2 bg-slate-50 dark:bg-slate-800 rounded-xl text-slate-400 hover:text-primary transition-colors">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
 
               <div className="mb-8 mt-4">
-                  <span className="text-secondary font-black text-xs uppercase tracking-widest mb-2 block">Application Form</span>
-                  <h3 className="text-3xl font-black text-primary dark:text-white leading-tight tracking-tighter">{regEventTarget.title}</h3>
-                  <div className="flex items-center gap-4 mt-3">
-                     <span className="text-slate-400 text-xs font-bold flex items-center gap-1.5"><CalendarDays className="w-4 h-4" /> {regEventTarget.date}</span>
-                     <span className="text-slate-400 text-xs font-bold flex items-center gap-1.5"><MapPin className="w-4 h-4" /> {regEventTarget.location?.split(',')[0]}</span>
-                  </div>
+                <span className="text-secondary font-black text-xs uppercase tracking-widest mb-2 block">Application Form</span>
+                <h3 className="text-3xl font-black text-primary dark:text-white leading-tight tracking-tighter">{regEventTarget.title}</h3>
+                <div className="flex items-center gap-4 mt-3">
+                  <span className="text-slate-400 text-xs font-bold flex items-center gap-1.5"><CalendarDays className="w-4 h-4" /> {regEventTarget.date}</span>
+                  <span className="text-slate-400 text-xs font-bold flex items-center gap-1.5"><MapPin className="w-4 h-4" /> {regEventTarget.location?.split(',')[0]}</span>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-6 mb-8 grid grid-cols-2 gap-y-4 gap-x-6">
+                <div className="col-span-2 text-[9px] font-black uppercase tracking-widest text-slate-400 mb-[-8px]">Identity Sync</div>
+                <div><p className="text-[10px] text-slate-400 font-bold uppercase">Name</p><p className="text-primary dark:text-white text-sm font-black truncate">{user.name}</p></div>
+                <div><p className="text-[10px] text-slate-400 font-bold uppercase">Roll No</p><p className="text-primary dark:text-white text-sm font-black">{user.rollNumber || 'VERIFYING'}</p></div>
+              </div>
+
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-[0.2em]">Contact Primary <span className="text-rose-500">*</span></label>
+                  <input
+                    type="tel"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl px-6 py-4 text-primary dark:text-white font-black text-sm focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
+                    placeholder="e.g. 9876543210"
+                    value={regForm.phone}
+                    onChange={e => setRegForm(p => ({ ...p, phone: e.target.value }))}
+                  />
                 </div>
 
-                <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-6 mb-8 grid grid-cols-2 gap-y-4 gap-x-6">
-                   <div className="col-span-2 text-[9px] font-black uppercase tracking-widest text-slate-400 mb-[-8px]">Identity Sync</div>
-                   <div><p className="text-[10px] text-slate-400 font-bold uppercase">Name</p><p className="text-primary dark:text-white text-sm font-black truncate">{user.name}</p></div>
-                   <div><p className="text-[10px] text-slate-400 font-bold uppercase">Roll No</p><p className="text-primary dark:text-white text-sm font-black">{user.rollNumber || 'VERIFYING'}</p></div>
-                </div>
-
-                <div className="space-y-5">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-[0.2em]">Contact Primary <span className="text-rose-500">*</span></label>
-                    <input 
-                      type="tel" 
+                    <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-[0.2em]">Academic Year <span className="text-rose-500">*</span></label>
+                    <select
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl px-6 py-4 text-primary dark:text-white font-black text-sm focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all appearance-none cursor-pointer"
+                      value={regForm.year}
+                      onChange={e => setRegForm(p => ({ ...p, year: e.target.value }))}
+                    >
+                      <option value="">Select</option>
+                      {['1st Year', '2nd Year', '3rd Year', '4th Year'].map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-[0.2em]">Section</label>
+                    <input
                       className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl px-6 py-4 text-primary dark:text-white font-black text-sm focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
-                      placeholder="e.g. 9876543210"
-                      value={regForm.phone} 
-                      onChange={e => setRegForm(p => ({ ...p, phone: e.target.value }))} 
+                      placeholder="e.g. CSE-A"
+                      value={regForm.branch}
+                      onChange={e => setRegForm(p => ({ ...p, branch: e.target.value }))}
                     />
                   </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-[0.2em]">Academic Year <span className="text-rose-500">*</span></label>
-                      <select 
-                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl px-6 py-4 text-primary dark:text-white font-black text-sm focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all appearance-none cursor-pointer"
-                        value={regForm.year} 
-                        onChange={e => setRegForm(p => ({ ...p, year: e.target.value }))}
-                      >
-                        <option value="">Select</option>
-                        {['1st Year', '2nd Year', '3rd Year', '4th Year'].map(y => <option key={y} value={y}>{y}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-[0.2em]">Section</label>
-                      <input 
-                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl px-6 py-4 text-primary dark:text-white font-black text-sm focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
-                        placeholder="e.g. CSE-A"
-                        value={regForm.branch} 
-                        onChange={e => setRegForm(p => ({ ...p, branch: e.target.value }))} 
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex gap-4 pt-4">
-                    <button onClick={() => setShowRegModal(false)} className="flex-1 py-4 text-slate-400 dark:text-slate-500 hover:text-primary text-sm font-black transition-all border-2 border-transparent hover:border-slate-100 rounded-2xl">Cancel</button>
-                    <button onClick={submitRegistration} disabled={regLoading || !regForm.phone || !regForm.year}
-                      className="flex-1 py-4 bg-primary hover:bg-slate-800 disabled:opacity-50 text-white text-sm font-black rounded-2xl transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3">
-                      {regLoading ? <span className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" /> : null}
-                      Finalize Entry
-                    </button>
-                  </div>
                 </div>
+
+                <div className="flex gap-4 pt-4">
+                  <button onClick={() => setShowRegModal(false)} className="flex-1 py-4 text-slate-400 dark:text-slate-500 hover:text-primary text-sm font-black transition-all border-2 border-transparent hover:border-slate-100 rounded-2xl">Cancel</button>
+                  <button onClick={submitRegistration} disabled={regLoading || !regForm.phone || !regForm.year}
+                    className="flex-1 py-4 bg-primary hover:bg-slate-800 disabled:opacity-50 text-white text-sm font-black rounded-2xl transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3">
+                    {regLoading ? <span className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" /> : null}
+                    Finalize Entry
+                  </button>
+                </div>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -834,7 +830,7 @@ const TicketCardCompact = ({ event, userId }: any) => (
       </div>
 
       <h3 className="text-primary text-xl font-black tracking-tight mb-8 leading-tight">{event.title}</h3>
-      
+
       <div className="grid grid-cols-2 gap-y-6 gap-x-8">
         <div>
           <p className="text-[9px] uppercase font-black tracking-widest text-slate-400 mb-2">Event Date</p>
@@ -846,10 +842,14 @@ const TicketCardCompact = ({ event, userId }: any) => (
         </div>
       </div>
     </div>
-    
+
     <div className="flex flex-col items-center justify-center bg-slate-50 border-l border-slate-100 min-w-[180px] p-8 space-y-4">
-      <div className="bg-white p-4 rounded-3xl shadow-2xl shadow-black/5 ring-4 ring-primary/5">
-        <QRCodeSVG value={`EVT-${event._id}-STU-${userId}`} size={84} level="H" />
+      <div className="bg-white p-4 rounded-3xl shadow-2xl shadow-black/5 ring-4 ring-primary/5 flex items-center justify-center">
+        {event.qrCode ? (
+          <img src={event.qrCode} alt="Ticket QR Code" style={{ width: 84, height: 84 }} />
+        ) : (
+          <QRCodeSVG value={`EVT-${event._id || event.id}-STU-${userId}`} size={84} level="H" />
+        )}
       </div>
       <div className="text-center">
         <p className="text-[10px] uppercase font-black tracking-[0.3em] text-primary">SCANNABLE</p>
@@ -880,7 +880,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 const ProfileInfoItem = ({ label, value, icon }: { label: string; value: string; icon: string }) => (
   <div className="flex items-center gap-5 py-5 border-b border-slate-50 last:border-0 group">
     <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-xl shrink-0 group-hover:bg-primary/5 group-hover:border-primary/10 transition-colors">
-       {icon}
+      {icon}
     </div>
     <div className="min-w-0 flex-1">
       <p className="text-slate-400 text-[9px] uppercase font-black tracking-[0.2em] mb-1">{label}</p>

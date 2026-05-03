@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const HOD = require('../models/HOD');
+const { sendWelcomeEmail } = require('../utils/email');
 
 const router = express.Router();
 
@@ -27,6 +28,9 @@ router.post('/register', async (req, res) => {
     });
 
     await hod.save();
+
+    // Send Welcome Email async
+    sendWelcomeEmail(email, name).catch(err => console.error("Failed to send welcome email:", err));
 
     res.status(201).json({ message: 'HOD Registration successful. You can now log in.' });
 

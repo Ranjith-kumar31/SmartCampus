@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Student = require('../models/Student');
-const { sendEmail } = require('../utils/email');
+const { sendWelcomeEmail } = require('../utils/email');
 
 const router = express.Router();
 
@@ -36,11 +36,7 @@ router.post('/register', async (req, res) => {
     await student.save();
 
     // Send Welcome Email async
-    sendEmail({
-      to_name: name,
-      to_email: email,
-      message: `Welcome to SmartCampus! Your account has been registered under the ${department} department.`,
-    }).catch(err => console.error("Failed to send welcome email:", err));
+    sendWelcomeEmail(email, name).catch(err => console.error("Failed to send welcome email:", err));
 
     res.status(201).json({ message: 'Registration successful. You can now log in.' });
 
